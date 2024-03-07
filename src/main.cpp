@@ -170,18 +170,21 @@ void comTask(void *pvParameters) {
 }
 
 int rhod_test = 0;
+unsigned long startTime;
+unsigned long endTime;
+unsigned long executionTime;
 
 void controlTask(void *pvParameters) {
   while (1) {
     // Your control task code here
     // This will run indefinitely
     //Serial.print("Control task");
-    unsigned long startTime = millis(); // Get the current time
+    startTime = millis(); // Get the current time
 
     control();
 
-    unsigned long endTime = millis(); // Get the current time again
-    unsigned long executionTime = endTime - startTime; // Calculate the execution time
+    endTime = millis(); // Get the current time again
+    executionTime = endTime - startTime; // Calculate the execution time
 
     Serial.print("Execution time: ");
     Serial.print(executionTime);

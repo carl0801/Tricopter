@@ -5,19 +5,10 @@
 #include <VL53L0X.h>
 #include "MPU6050.h"
 #include "HMC5883L.h"
-
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <WiFiAP.h>
-#include <IPAddress.h>
+#include "IMU.h"
 
 
 /*------------------------------- VARIBLES ----------------------------*/
-
-const char* ssid = "TDC-C0A4"; // Your WiFi SSID
-const char* password = "3356f79c4"; // Your WiFi password
-const int port = 80;
-int counter = 0;
 
 const double STEP_TIME = 20; // timeInterval
 const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
@@ -49,15 +40,7 @@ struct Mag{
 Mag mag;
 
 
-
 /*------------------------------- CLASSES -----------------------------*/
-
-// class for server
-WiFiServer server(port);
-
-IPAddress local_IP(192, 168, 1, 50);
-IPAddress gateway(192, 168, 1, 1);
-IPAddress subnet(255, 255, 255, 0);
 
 // class for the MPU6050 and HMC5883L
 MPU6050 accelgyro;
@@ -66,8 +49,44 @@ HMC5883L magnometer;
 // class for vl53l0x
 VL53L0X lidar;
 
-
 /*------------------------------- FUNCTIONS ----------------------------*/
+
+// Function to initialize the sensors
+void IMU::init_sensors() {
+  // join I2C bus (I2Cdev library doesn't do this automatically)
+  Wire.begin();
+
+  // initialize serial communication
+  Serial.begin(9600);
+
+  // initialize MPU6050
+  Serial.println("Initializing I2C devices...");
+  accelgyro.setI2CMasterModeEnabled(false);
+  accelgyro.setI2CBypassEnabled(true);
+  accelgyro.setSleepEnabled(false);
+
+  accelgyro.initialize();
+  accelgyro.setFullScaleGyroRange(2);
+  accelgyro.setFullScaleAccelRange(2);
+  accelgyro.setXGyroOffset(58);
+  accelgyro.setYGyroOffset(0);
+  accelgyro.setZGyroOffset(-647);
+  accelgyro.CalibrateAccel();
+
+  // initialize the magnometer
+  magnometer.initialize();
+
+
+  // initialize the ToF sensor
+  lidar.setTimeout(500);
+  if (!lidar.init())
+  {
+    Serial.println("Failed to detect and initialize sensor!");
+    while (1) {}
+  }
+  lidar.startContinuous();
+
+}
 
 // Function to compute the dot product of a Vector3D and a 3x3 matrix
 Mag transformation(RawData raw, Mag mag)    
@@ -148,8 +167,8 @@ Angle complementaryFilter(Angle angle, RawData raw, Mag mag) {
   return angle;
 }
 
-// Function to get the angle
-Angle getAngle() {
+//Get roll, pitch and yaw angle and alttitude from ToF sensor
+void IMU::getIMUData(double *roll, double *pitch, double *yaw, double *z1) {
 
   // read raw accel/gyro measurements from device
   accelgyro.getMotion6(&raw.ax, &raw.ay, &raw.az, &raw.gx, &raw.gy, &raw.gz);
@@ -160,91 +179,12 @@ Angle getAngle() {
   // apply the complementary filter
   angle = complementaryFilter(angle, raw, mag);
 
-  return angle;
-}
+  angle.z1 = lidar.readRangeContinuousMillimeters();
 
-
-/*------------------------------- MAIN ----------------------------*/
-
-void setup() {
-  // join I2C bus (I2Cdev library doesn't do this automatically)
-  Wire.begin();
-
-  // initialize serial communication
-  Serial.begin(9600);
-
-  // initialize MPU6050
-  Serial.println("Initializing I2C devices...");
-  accelgyro.setI2CMasterModeEnabled(false);
-  accelgyro.setI2CBypassEnabled(true);
-  accelgyro.setSleepEnabled(false);
-
-  accelgyro.initialize();
-  accelgyro.setFullScaleGyroRange(2);
-  accelgyro.setFullScaleAccelRange(2);
-  accelgyro.setXGyroOffset(58);
-  accelgyro.setYGyroOffset(0);
-  accelgyro.setZGyroOffset(-647);
-  accelgyro.CalibrateAccel();
-
-  // initialize the magnometer
-  magnometer.initialize();
-
-
-  // initialize the ToF sensor
-  lidar.setTimeout(500);
-  if (!lidar.init())
-  {
-    Serial.println("Failed to detect and initialize sensor!");
-    while (1) {}
-  }
-  lidar.startContinuous();
-
-  // Connect to Wi-Fi
-  if (!WiFi.config(local_IP, gateway, subnet)){}
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-  }
-
-  // Start the server
-  server.begin();
+  *roll = angle.roll;
+  *pitch = angle.pitch;
+  *yaw = angle.yaw;
+  *z1 = angle.z1;
 
 }
 
-void loop() {
-
-  WiFiClient client = server.available(); // Check if a client has connected
-
-  if (client) {
-    while (client.connected()) {
-
-      //Get roll, pitch and yaw angle
-      angle = getAngle();
-
-      //Get alttitude from ToF sensor
-      angle.z1 = lidar.readRangeContinuousMillimeters();
-
-      /*Serial.print("X:"); Serial.print(angle.roll);
-      Serial.print("Y:"); Serial.print(angle.pitch);
-      Serial.print("Z:"); Serial.print(angle.yaw);
-      Serial.print("z1:"); Serial.println(angle.z1);*/
-
-      //Send message
-      if (counter % 5 ==0.0){
-        client.print("X:"); 
-        client.print(angle.roll); client.print("\t");
-        client.print("Y:"); 
-        client.print(angle.pitch); client.print("\t");
-        client.print("Z:"); 
-        client.print(angle.yaw); client.print("\t");
-        client.print("z1:");
-        client.print(angle.z1); client.print("\t");
-        client.print("n");
-      }
-
-      counter += 1;
-      delay(STEP_TIME);
-    }
-  }
-}

@@ -5,6 +5,7 @@
 #include <VL53L0X.h>
 #include "MPU6050.h"
 #include "HMC5883L.h"
+#include <Adafruit_BMP085.h>
 #include "IMU.h"
 
 
@@ -41,12 +42,17 @@ Mag mag;
 
 /*------------------------------- CLASSES -----------------------------*/
 
-// class for the MPU6050 and HMC5883L
+// class for the MPU6050
 MPU6050 accelgyro;
+
+// class for the HMC5883L
 HMC5883L magnometer;
 
 // class for vl53l0x
 VL53L0X lidar;
+
+// class for BMP085
+Adafruit_BMP085 bmp;
 
 /*------------------------------- FUNCTIONS ----------------------------*/
 
@@ -75,6 +81,12 @@ void IMU::init_sensors() {
   // initialize the magnometer
   magnometer.initialize();
 
+
+  // initialize the BMP085
+  if (!bmp.begin()) {
+	Serial.println("Could not find a valid BMP085 sensor, check wiring!");
+	while (1) {}
+  }
 
   // initialize the ToF sensor
   lidar.setTimeout(500);
@@ -187,3 +199,12 @@ void IMU::getIMUData(double *roll, double *pitch, double *yaw, double *z1) {
 
 }
 
+// Function to get the pressure from the BMP085
+void IMU::getPressure(double *pressure) {
+  *pressure = bmp.readPressure();
+}
+
+// Function to get the temperature from the BMP085
+void IMU::getTemperature(double *temperature) {
+  *temperature = bmp.readTemperature();
+}

@@ -1,4 +1,4 @@
-#include <Arduino.h>
+/* #include <Arduino.h>
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "HMC5883L.h"
@@ -13,9 +13,14 @@
 #include <cmath>
 #include <ESP32Servo.h>
 #include <ESP32PWM.h>
-#include "freertos/task.h"
+#include "freertos/task.h" */
+#include <Arduino.h>
 #include <FlightController.h>
-
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiAP.h>
+#include <IPAddress.h>
+#include "freertos/task.h"
 
 bool run = true;
 const char* ssid = "TDC-C0A4";
@@ -30,7 +35,10 @@ const double STEP_TIME = 20; // timeInterval
 const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
 const double ALPHA = 0.8; // alpha value for the complementary filter
 
-
+extern IMU imu;
+extern Servo esc1;
+extern Servo esc2;
+extern Servo esc3;
 
 
 
@@ -82,7 +90,6 @@ void processCommand(const char command) {
       break;
     case 'l':
       run = false;
-      updateMotor(0, 0, 0, 0);
       break;
     default:
       break;

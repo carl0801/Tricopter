@@ -54,7 +54,7 @@ void loop() {
     
       //Get roll, pitch and yaw angle and alttitude from ToF sensor
       imu.getIMUData(&roll, &pitch, &yaw, &z1);
-
+      
       /*Serial.print("X:"); Serial.print(angle.roll);
       Serial.print("Y:"); Serial.print(angle.pitch);
       Serial.print("Z:"); Serial.print(angle.yaw);
@@ -74,7 +74,7 @@ void loop() {
       }
 
       counter += 1;
-      delay(STEP_TIME);
+      delay(imu.STEP_TIME);
     }
   }
 }

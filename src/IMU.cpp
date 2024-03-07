@@ -9,11 +9,10 @@
 
 
 /*------------------------------- VARIBLES ----------------------------*/
-
-const double STEP_TIME = 20; // timeInterval
 const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
 const double ALPHA = 0.8; // alpha value for the complementary filter
 double calibrated_values[3];
+const double IMU::STEP_TIME = 20; // timeInterval
 
 struct RawData{
   int16_t ax, ay, az;
@@ -134,9 +133,9 @@ Angle complementaryFilter(Angle angle, RawData raw, Mag mag) {
   mag = transformation(raw, mag);
 
   // Calculate the change in angle from the gyro
-  gyroAngleChange[0] = ((raw.gx) * (STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
-  gyroAngleChange[1] = ((raw.gy) * (STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
-  gyroAngleChange[2] = ((raw.gz) * (STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
+  gyroAngleChange[0] = ((raw.gx) * (IMU::STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
+  gyroAngleChange[1] = ((raw.gy) * (IMU::STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
+  gyroAngleChange[2] = ((raw.gz) * (IMU::STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
 
 
   // Calculate the angle from the accelerometer and magnetometer

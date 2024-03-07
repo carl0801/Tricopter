@@ -13,7 +13,7 @@ class IMU {
         // Constants
         const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
         const double ALPHA = 0.8; // alpha value for the complementary filter
-    public:
+
         // Structures
         struct RawData {
             int16_t ax, ay, az;
@@ -37,6 +37,10 @@ class IMU {
             double calY = 0;
             double calZ = 0;
         };
+
+    public:
+        // Variables
+        static const double STEP_TIME; // timeInterval
 
         // Functions
         void init_sensors();

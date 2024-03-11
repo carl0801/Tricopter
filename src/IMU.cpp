@@ -1,5 +1,4 @@
 #include <Arduino.h>
-
 #include "I2Cdev.h"
 #include <Wire.h>
 #include <VL53L0X.h>
@@ -82,7 +81,7 @@ void IMU::init_sensors() {
   magnometer.initialize();
 
 
-  // initialize the BMP085
+  // initialize the BMP180
   if (!bmp.begin()) {
 	Serial.println("Could not find a valid BMP085 sensor, check wiring!");
 	while (1) {}
@@ -178,7 +177,7 @@ Angle complementaryFilter(Angle angle, RawData raw, Mag mag) {
   return angle;
 }
 
-//Get roll, pitch and yaw angle and alttitude from ToF sensor
+//Get roll, pitch and yaw angle and alttitude from ToF sensor (degrees, degrees, degrees, mm)
 void IMU::getIMUData(double *roll, double *pitch, double *yaw, double *z1) {
 
   // read raw accel/gyro measurements from device
@@ -199,12 +198,12 @@ void IMU::getIMUData(double *roll, double *pitch, double *yaw, double *z1) {
 
 }
 
-// Function to get the pressure from the BMP085
+// Get the pressure from the BMP085 (Pa)
 void IMU::getPressure(double *pressure) {
   *pressure = bmp.readPressure();
 }
 
-// Function to get the temperature from the BMP085
+// Get the temperature from the BMP085 (C°)
 void IMU::getTemperature(double *temperature) {
   *temperature = bmp.readTemperature();
 }

@@ -87,7 +87,8 @@ FlightController::FlightController(double dt) : dt(dt),
 
 std::tuple<double, double, double, double> FlightController::calculate() {
         resetTargetAngle(target_roll, target_pitch, target_yaw, target_z);
-        imu.getIMUData(&roll, &pitch, &yaw, &z);  //get the current angle and altitude
+        imu.getRotation(&roll, &pitch, &yaw);  //get the current angle
+        imu.getAltitude(&z); //get the current altitude
 
         //z = z;
         roll *= M_PI/180;

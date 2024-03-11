@@ -9,6 +9,7 @@
 
 
 /*------------------------------- VARIBLES ----------------------------*/
+
 const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
 const double ALPHA = 0.8; // alpha value for the complementary filter
 double calibrated_values[3];
@@ -39,6 +40,9 @@ struct Mag{
 Mag mag;
 
 
+
+
+
 /*------------------------------- CLASSES -----------------------------*/
 
 // class for the MPU6050
@@ -52,6 +56,8 @@ VL53L0X lidar;
 
 // class for BMP085
 Adafruit_BMP085 bmp;
+
+
 
 /*------------------------------- FUNCTIONS ----------------------------*/
 

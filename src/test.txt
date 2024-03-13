@@ -1,9 +1,5 @@
 #include <Arduino.h>
 #include <IMU.h>
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <WiFiAP.h>
-#include <IPAddress.h>
 
 // Constants
 const double STEP_TIME = 20; // timeInterval
@@ -21,19 +17,15 @@ void setup() {
 
     // Initialize the IMU
     imu.init_sensors();
-
-    // Start the server
-    server.begin();
 }
 
 void loop() {
   //Get roll, pitch and yaw angle and alttitude from ToF sensor
-  imu.getIMUData(&roll, &pitch, &yaw, &z1);
+  imu.getRotation(&roll, &pitch, &yaw);
   
-  /*Serial.print("X:"); Serial.print(angle.roll);
-  Serial.print("Y:"); Serial.print(angle.pitch);
-  Serial.print("Z:"); Serial.print(angle.yaw);
-  Serial.print("z1:"); Serial.println(angle.z1);*/
+  Serial.print("X:"); Serial.print(roll);
+  Serial.print("Y:"); Serial.print(pitch);
+  Serial.print("Z:"); Serial.println(yaw);
 
   delay(imu.STEP_TIME);
 }

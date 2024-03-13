@@ -44,7 +44,8 @@ class IMU {
 
         // Functions
         void init_sensors();
-        void getIMUData(double *roll, double *pitch, double *yaw, double *z1);
+        void getRotation(double *roll, double *pitch, double *yaw);
+        void getAltitude(double *altitude);
         void getPressure(double *pressure);
         void getTemperature(double *temperature);
 };

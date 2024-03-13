@@ -1,19 +1,3 @@
-/* #include <Arduino.h>
-#include "I2Cdev.h"
-#include "MPU6050.h"
-#include "HMC5883L.h"
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <WiFiAP.h>
-#include <IPAddress.h>
-#include <Wire.h>
-#include <tuple>
-#include <iostream>
-#include <algorithm>
-#include <cmath>
-#include <ESP32Servo.h>
-#include <ESP32PWM.h>
-#include "freertos/task.h" */
 #include <Arduino.h>
 #include <FlightController.h>
 #include <WiFi.h>

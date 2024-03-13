@@ -1,5 +1,4 @@
 #include <Arduino.h>
-
 #include "I2Cdev.h"
 #include <Wire.h>
 #include <VL53L0X.h>
@@ -10,6 +9,7 @@
 
 
 /*------------------------------- VARIBLES ----------------------------*/
+
 const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
 const double ALPHA = 0.8; // alpha value for the complementary filter
 double calibrated_values[3];
@@ -40,6 +40,9 @@ struct Mag{
 Mag mag;
 
 
+
+
+
 /*------------------------------- CLASSES -----------------------------*/
 
 // class for the MPU6050
@@ -53,6 +56,8 @@ VL53L0X lidar;
 
 // class for BMP085
 Adafruit_BMP085 bmp;
+
+
 
 /*------------------------------- FUNCTIONS ----------------------------*/
 
@@ -82,7 +87,7 @@ void IMU::init_sensors() {
   magnometer.initialize();
 
 
-  // initialize the BMP085
+  // initialize the BMP180
   if (!bmp.begin()) {
 	Serial.println("Could not find a valid BMP085 sensor, check wiring!");
 	while (1) {}
@@ -178,8 +183,8 @@ Angle complementaryFilter(Angle angle, RawData raw, Mag mag) {
   return angle;
 }
 
-//Get roll, pitch and yaw angle and alttitude from ToF sensor
-void IMU::getIMUData(double *roll, double *pitch, double *yaw, double *z1) {
+//Get roll, pitch and yaw angle (degrees)
+void IMU::getRotation(double *roll, double *pitch, double *yaw) {
 
   // read raw accel/gyro measurements from device
   accelgyro.getMotion6(&raw.ax, &raw.ay, &raw.az, &raw.gx, &raw.gy, &raw.gz);
@@ -190,21 +195,23 @@ void IMU::getIMUData(double *roll, double *pitch, double *yaw, double *z1) {
   // apply the complementary filter
   angle = complementaryFilter(angle, raw, mag);
 
-  angle.z1 = lidar.readRangeContinuousMillimeters();
-
   *roll = angle.roll;
   *pitch = angle.pitch;
   *yaw = angle.yaw;
-  *z1 = angle.z1;
 
 }
 
-// Function to get the pressure from the BMP085
+//Get alttitude from ToF sensor
+void IMU::getAltitude(double *altitude) {
+  *altitude = lidar.readRangeContinuousMillimeters();
+};
+
+// Get the pressure from the BMP085 (Pa)
 void IMU::getPressure(double *pressure) {
   *pressure = bmp.readPressure();
 }
 
-// Function to get the temperature from the BMP085
+// Get the temperature from the BMP085 (C°)
 void IMU::getTemperature(double *temperature) {
   *temperature = bmp.readTemperature();
 }

@@ -3,25 +3,9 @@
 
 IMU imu;
 
-Servo esc1;
-Servo esc2;
-Servo esc3;
 
-void updateMotor(double omega_1, double omega_2, double omega_3, double alpha) {
-//map the values to the correct of range 0-180 from 0-2500
-  omega_1 = map(omega_1, 0, 4000, 0, 100);
-  omega_2 = map(omega_2, 0, 4000, 0, 100);
-  omega_3 = map(omega_3, 0, 4000, 0, 100);
-  
-  //make sure the value is max 100
-  omega_1 = std::min(omega_1, 100.0);
-  omega_2 = std::min(omega_2, 100.0);
-  omega_3 = std::min(omega_3, 100.0);
 
-  esc1.write(omega_1);
-  esc2.write(omega_2);
-  esc3.write(omega_3);
-}
+
 
 void resetTargetAngle(double& roll, double& pitch, double& yaw, double& z) {
     roll = 0.0;
@@ -67,11 +51,11 @@ double PIDController::calculate(double error) {
 }
 
 FlightController::FlightController(double dt) : dt(dt),
-    TransControlZ(0.5,0,0,dt),
-    RotControlZ(0.21,0,0,dt),
-    RotControlX(1.5,0,0,dt),
-    RotControlY(1.5,0,0,dt),
-    drone(0.25, 0.25, 9.81, 0.02, 0.035, 0.035, 0.02, 0.00002, 0.000003),
+    TransControlZ(0.1,0,0,dt),
+    RotControlZ(0.1,0,0,dt),
+    RotControlX(0.1,0,0,dt),
+    RotControlY(0.1,0,0,dt),
+    drone(0.25, 0.25, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0000008, 0.000003),
     target_z(0),
     target_roll(0),
     target_pitch(0),
@@ -85,66 +69,69 @@ FlightController::FlightController(double dt) : dt(dt),
     omega_3(0),
     alpha(0) {}
 
-std::tuple<double, double, double, double> FlightController::calculate() {
-        resetTargetAngle(target_roll, target_pitch, target_yaw, target_z);
-        imu.getIMUData(&roll, &pitch, &yaw, &z);  //get the current angle and altitude
+motorData FlightController::calculate() {
+    resetTargetAngle(target_roll, target_pitch, target_yaw, target_z);
+    imu.getIMUData(&roll, &pitch, &yaw, &z);  //get the current angle and altitude
 
-        //z = z;
-        roll *= M_PI/180;
-        pitch *= M_PI/180;
-        yaw *= M_PI/180;
+    //z = z;
+    roll *= M_PI/180;
+    pitch *= M_PI/180;
+    yaw *= M_PI/180;
 
-        
-        double z_error = target_z - z;
-        double U_z = TransControlZ.calculate(-z_error);
-        double roll_error = target_roll - roll;
-        double U_r = RotControlX.calculate(-roll_error);
-        double pitch_error = target_pitch - pitch;
-        double U_p = RotControlY.calculate(pitch_error);
-        double yaw_error = target_yaw - yaw;
-        double U_y = RotControlZ.calculate(yaw_error);
-        
+    
+    z_error = target_z - z;
+    U_z = TransControlZ.calculate(-z_error);
+    roll_error = target_roll - roll;
+    U_r = RotControlX.calculate(-roll_error);
+    pitch_error = target_pitch - pitch;
+    U_p = RotControlY.calculate(pitch_error);
+    yaw_error = target_yaw - yaw;
+    U_y = RotControlZ.calculate(yaw_error);
+    
 
-        U_z = U_z - drone.gravity*drone.mass;
-
- 
-
-
-        double term1_12 = (2 * drone.l_0 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2));
-        double term2_12 = (2 * U_r) / (drone.l_1 * drone.k_t);
-        double term3_12 = (2 * U_p) / (drone.k_t * (drone.l_0 + drone.l_2));
-        double omega_1_mid = -term1_12 - term2_12 + term3_12; 
-        double omega_2_mid = -term1_12 + term2_12 + term3_12;
-        omega_1 = (omega_1_mid < 0) ? 0 : sqrt(omega_1_mid) / 2;
-        omega_2 = (omega_2_mid < 0) ? 0 : sqrt(omega_2_mid) / 2;
-
- 
-
-        long double term1_3p1 = ((drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2)));
-        long double term1_3p2 = (U_p / (drone.k_t * (drone.l_0 + drone.l_2))) ;
-        long double term1_3 = pow(term1_3p1 - term1_3p2, 2);
-
-
-        long double term2_3p1 = ((drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0)) ;
-        long double term2_3p2 = (U_y / (drone.l_0 * drone.k_t));
-
-        long double term2_3 = pow(term2_3p1 + term2_3p2, 2);
- 
-        omega_3 = pow((term1_3 + term2_3), 0.25);
+    U_z = U_z - drone.gravity*drone.mass;
 
 
 
-        Serial.print("omega1: "); Serial.println(omega_1);
-        Serial.print("omega2: "); Serial.println(omega_2);
-        Serial.print("omega3: "); Serial.println(omega_3);
-        Serial.print("alpha: "); Serial.println(alpha*180/M_PI);
+
+    term1_12 = (2 * drone.l_0 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2));
+    term2_12 = (2 * U_r) / (drone.l_1 * drone.k_t);
+    term3_12 = (2 * U_p) / (drone.k_t * (drone.l_0 + drone.l_2));
+    omega_1_mid = -term1_12 - term2_12 + term3_12; 
+    omega_2_mid = -term1_12 + term2_12 + term3_12;
+    omega_1 = (omega_1_mid < 0) ? 0 : sqrt(omega_1_mid) / 2;
+    omega_2 = (omega_2_mid < 0) ? 0 : sqrt(omega_2_mid) / 2;
 
 
-        double alpha_term1 = -((drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0) + U_y / (drone.l_0 * drone.k_t));
-        double alpha_term2 = (drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2)) - U_p / (drone.k_t * (drone.l_0 + drone.l_2));
-        alpha = atan2(alpha_term1, alpha_term2);
 
-    updateMotor(omega_1, omega_2, omega_3, alpha);
-    // Return results
-    return std::make_tuple(omega_1, omega_2, omega_3, alpha);
+    term1_3p1 = ((drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2)));
+    term1_3p2 = (U_p / (drone.k_t * (drone.l_0 + drone.l_2))) ;
+    term1_3 = pow(term1_3p1 - term1_3p2, 2);
+
+
+    term2_3p1 = ((drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0)) ;
+    term2_3p2 = (U_y / (drone.l_0 * drone.k_t));
+
+    term2_3 = pow(term2_3p1 + term2_3p2, 2);
+
+    omega_3 = pow((term1_3 + term2_3), 0.25);
+
+
+
+    Serial.print("omega1: "); Serial.println(omega_1);
+    Serial.print("omega2: "); Serial.println(omega_2);
+    Serial.print("omega3: "); Serial.println(omega_3);
+    Serial.print("alpha: "); Serial.println(alpha*180/M_PI);
+
+
+    alpha_term1 = -((drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0) + U_y / (drone.l_0 * drone.k_t));
+    alpha_term2 = (drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2)) - U_p / (drone.k_t * (drone.l_0 + drone.l_2));
+    alpha = atan2(alpha_term1, alpha_term2);
+
+    motorValues.omega_1 = omega_1;
+    motorValues.omega_2 = omega_2;
+    motorValues.omega_3 = omega_3;
+    motorValues.alpha = alpha;
+    
+    return motorValues;
 }

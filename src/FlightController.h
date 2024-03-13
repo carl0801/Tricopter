@@ -8,8 +8,14 @@
 #include <ESP32PWM.h>
 
 
+struct motorData {
+    double omega_1;
+    double omega_2;
+    double omega_3;
+    double alpha;
+};
 
-void updateMotor(double omega_1, double omega_2, double omega_3, double alpha);
+//void updateMotor(double omega_1, double omega_2, double omega_3, double alpha);
 
 void resetTargetAngle(double& roll, double& pitch, double& yaw, double& z);
 
@@ -54,6 +60,10 @@ private:
 };
 
 class FlightController {
+public:
+    FlightController(double dt);
+
+    motorData calculate();
 private:
     double dt;
     PIDController TransControlZ;
@@ -61,6 +71,7 @@ private:
     PIDController RotControlX;
     PIDController RotControlY;
     Tricopter drone;
+    motorData motorValues;
 
     // Member variables
     double target_z;
@@ -73,15 +84,38 @@ private:
     double pitch;
     double yaw;
 
+    double z_error;
+    double U_z;
+    double roll_error;
+    double U_r;
+    double pitch_error;
+    double U_p;
+    double yaw_error;
+    double U_y;
+
     double omega_1;
     double omega_2;
     double omega_3;
     double alpha;
 
-public:
-    FlightController(double dt);
+    double term1_12;
+    double term2_12;
+    double term3_12;
+    double omega_1_mid;
+    double omega_2_mid;
 
-    std::tuple<double, double, double, double> calculate();
+    long double term1_3p1;
+    long double term1_3p2;
+    long double term1_3;
+
+    long double term2_3p1;
+    long double term2_3p2;
+    long double term2_3;
+
+    double alpha_term1;
+    double alpha_term2;
+
+
 };
 
 #endif // FLIGHTCONTROLLER_H

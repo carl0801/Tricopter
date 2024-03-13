@@ -25,21 +25,22 @@
 bool run = true;
 const char* ssid = "TDC-C0A4";
 const char* password = "3356f79c4";
-IPAddress local_ip(192,168,1,52);
+IPAddress local_ip(192,168,1,51);
 IPAddress gateway(192,168,1,1);
 IPAddress subnet(255,255,255,0);
 WiFiServer server(80);
 
 
-const double STEP_TIME = 20; // timeInterval
-const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
-const double ALPHA = 0.8; // alpha value for the complementary filter
+const double STEP_TIME = 10; // timeInterval for flight controller
+//const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
+//const double ALPHA = 0.8; // alpha value for the complementary filter
 
 extern IMU imu;
-extern Servo esc1;
-extern Servo esc2;
-extern Servo esc3;
+Servo esc1;
+Servo esc2;
+Servo esc3;
 
+motorData data;
 
 
 double x = 0;
@@ -51,11 +52,6 @@ int counter = 0;
 
 const int maxClients = 5; // Maximum number of clients the server can handle
 WiFiClient clients[maxClients]; // Array to hold the client instances
-
-
-
-
-
 
 void processCommand(const char command) {
   switch (command) {
@@ -97,21 +93,30 @@ void processCommand(const char command) {
 }
 
 
-
-
-
 FlightController flightController(STEP_TIME);
 
+void updateMotor(motorData data) {
+  //map the values to the correct of range 0-180 from 0-2500
+  data.omega_1 = map(data.omega_1, 0, 4000, 0, 100);
+  data.omega_2 = map(data.omega_2, 0, 4000, 0, 100);
+  data.omega_3 = map(data.omega_3, 0, 4000, 0, 100);
+  
+  //make sure the value is max 100
+  data.omega_1 = std::min(data.omega_1, 100.0);
+  data.omega_2 = std::min(data.omega_2, 100.0);
+  data.omega_3 = std::min(data.omega_3, 100.0);
 
-
-
-
-
+  esc1.write(data.omega_1);
+  esc2.write(data.omega_2);
+  esc3.write(data.omega_3);
+}
 
 
 
 void control(){
-  flightController.calculate();
+  //flightController.calculate();
+  //motorData data = flightController.getMotorData();
+  updateMotor(flightController.calculate());
 }
 
 void com(){
@@ -150,7 +155,16 @@ void com(){
   counter = counter + 1;
 }
 
+double voltage;
+//float realVoltage;
 
+double getBatteryVoltage(){
+  //max input is 3.0V and max output should be 12.6V
+  voltage = (analogRead(34)/ 3722.727273) * 12.6;
+
+  //Serial.println(voltage);
+  return voltage;
+}
 
 void comTask(void *pvParameters) {
   /* while (run) {
@@ -189,24 +203,40 @@ void controlTask(void *pvParameters) {
     Serial.print("Execution time: ");
     Serial.print(executionTime);
     Serial.println(" ms");
-    if ((rhod_test > 100) or (run == false)){
-      updateMotor(0, 0, 0, 0);
+    if ((run == false)){
+      data.omega_1 = 0;
+      data.omega_2 = 0;
+      data.omega_3 = 0;
+      data.alpha = 0;
+      updateMotor(data);
       vTaskDelete(NULL);
     }
-    rhod_test++;
-    vTaskDelay(pdMS_TO_TICKS(10)); // Delay for 100 milliseconds
+    //rhod_test++;
+    vTaskDelay(pdMS_TO_TICKS(STEP_TIME)); // Delay for STEP_TIME milliseconds
   }
-  
+  vTaskDelete(NULL);
 }
 
+void batteryTask(void *pvParameters) {
+  while (1) {
+    if (getBatteryVoltage() < 8.7){
+      run = false;
+    }
+    vTaskDelay(pdMS_TO_TICKS(10000)); // Delay for 10000 milliseconds aka 10 seconds
+  }
+  vTaskDelete(NULL);
+}
 
 void setup() {
+
+
   Wire.begin();
 
   imu.init_sensors();
 
-  Serial.begin(115200);
+
   delay(1000);
+  Serial.begin(115200);
 
   WiFi.config(local_ip, gateway, subnet);
   Serial.println("Connecting to WiFi...");
@@ -220,6 +250,7 @@ void setup() {
   server.begin();
   Serial.println("Server started");
 
+
   esc1.attach(32, 1000, 2000);
   esc2.attach(33, 1000, 2000);
   esc3.attach(25, 1000, 2000);
@@ -229,10 +260,11 @@ void setup() {
   esc3.write(0);
 
 
-
+  const int controlCore = 1;
+  const int comCore = 0;
 
   // add delay to allow the ESCs to initialize
-  delay(9000);
+  delay(10000);
 
   xTaskCreatePinnedToCore(
     comTask,          // Task function
@@ -241,7 +273,7 @@ void setup() {
     NULL,             // Task input parameter
     1,                // Priority of the task
     NULL,             // Task handle.
-    0                 // Core where the task should run
+    comCore                 // Core where the task should run
   );
 
   xTaskCreatePinnedToCore(
@@ -249,10 +281,21 @@ void setup() {
     "Control",       // Name of task
     10000,           // Stack size of task
     NULL,            // Task input parameter
+    10,               // Priority of the task
+    NULL,            // Task handle.
+    controlCore                // Core where the task should run
+  );
+
+  xTaskCreatePinnedToCore(
+    batteryTask,     // Task function
+    "Battery",       // Name of task
+    1000,           // Stack size of task
+    NULL,            // Task input parameter
     1,               // Priority of the task
     NULL,            // Task handle.
-    1                // Core where the task should run
+    comCore                // Core where the task should run
   );
+
 }
 
 void loop() {

@@ -70,15 +70,11 @@ FlightController::FlightController(double dt) : dt(dt),
     alpha(0) {}
 
 motorData FlightController::calculate() {
-    resetTargetAngle(target_roll, target_pitch, target_yaw, target_z);
-    imu.getIMUData(&roll, &pitch, &yaw, &z);  //get the current angle and altitude
+    resetTargetAngle(target_roll, target_pitch, target_yaw, target_z); //makes it target 0
+    imu.getRotation(&roll, &pitch, &yaw); imu.getAltitude(&z);//get the current angle and altitude
+    roll *= M_PI/180; pitch *= M_PI/180; yaw *= M_PI/180; //convert to radians
 
-    //z = z;
-    roll *= M_PI/180;
-    pitch *= M_PI/180;
-    yaw *= M_PI/180;
 
-    
     z_error = target_z - z;
     U_z = TransControlZ.calculate(-z_error);
     roll_error = target_roll - roll;

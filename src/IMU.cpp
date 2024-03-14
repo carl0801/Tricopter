@@ -77,10 +77,8 @@ void IMU::init_sensors() {
 
   accelgyro.initialize();
   accelgyro.setFullScaleGyroRange(2);
-  accelgyro.setFullScaleAccelRange(2);
-  accelgyro.setXGyroOffset(58);
-  accelgyro.setYGyroOffset(0);
-  accelgyro.setZGyroOffset(-647);
+  accelgyro.setFullScaleAccelRange(0);
+  accelgyro.CalibrateGyro();
   accelgyro.CalibrateAccel();
 
   // initialize the magnometer

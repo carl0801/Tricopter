@@ -41,7 +41,7 @@ public:
 class PIDController {
 public:
     // Constructor
-    PIDController(double kp, double ki, double kd, double dt=0.01, double max_integral=0.0, double derivative_filter=1.5);
+    PIDController(double kp, double ki, double kd, double dt=0.01, double max_integral=0.0, double derivative_filter=0.1);
 
     // Member function to calculate PID output
     double calculate(double error);

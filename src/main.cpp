@@ -204,7 +204,8 @@ void controlTask(void *pvParameters) {
 void batteryTask(void *pvParameters) {
   while (1) {
     if (getBatteryVoltage() < 8.7){
-      run = false;
+      Serial.println("Battery low, shutting down");
+      //run = false;
     }
     vTaskDelay(pdMS_TO_TICKS(10000)); // Delay for 10000 milliseconds aka 10 seconds
   }
@@ -279,7 +280,7 @@ void setup() {
     NULL,            // Task handle.
     comCore                // Core where the task should run
   );
-
+  Serial.println("Setup done");
 }
 
 void loop() {

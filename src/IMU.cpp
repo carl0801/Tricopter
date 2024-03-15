@@ -6,6 +6,7 @@
 #include "HMC5883L.h"
 #include <Adafruit_BMP085.h>
 #include "IMU.h"
+#include "Fusion.h"
 
 
 /*------------------------------- VARIBLES ----------------------------*/
@@ -13,7 +14,6 @@
 const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
 const double ALPHA = 0.8; // alpha value for the complementary filter
 double calibrated_values[3];
-const double IMU::STEP_TIME = 20; // timeInterval
 
 struct RawData{
   int16_t ax, ay, az;
@@ -21,15 +21,6 @@ struct RawData{
   int16_t mx, my, mz;
 };
 RawData raw;
-
-struct Angle{
-  double z1 = 0;
-  double z2 = 0;
-  double roll = 0;
-  double pitch = 0;
-  double yaw = 0;
-};
-Angle angle;
 
 struct Mag{
   double x = 0;
@@ -39,6 +30,12 @@ struct Mag{
 };  
 Mag mag;
 
+struct filterData{
+  float gx, gy, gz;
+  float ax, ay, az;
+  float mx, my, mz;
+};
+filterData data;
 
 
 
@@ -51,39 +48,35 @@ MPU6050 accelgyro;
 // class for the HMC5883L
 HMC5883L magnometer;
 
-// class for vl53l0x
-VL53L0X lidar;
-
 // class for BMP085
 Adafruit_BMP085 bmp;
 
+// class for vl53l0x
+VL53L0X lidar;
 
+// class for the AHRS algorithm
+FusionAhrs ahrs;
 
 /*------------------------------- FUNCTIONS ----------------------------*/
 
-// Function to initialize the sensors
+// Initialize the sensors
 void IMU::init_sensors() {
   // join I2C bus (I2Cdev library doesn't do this automatically)
   Wire.begin();
 
-  // initialize serial communication
-  Serial.begin(9600);
-
   // initialize MPU6050
-  Serial.println("Initializing I2C devices...");
   accelgyro.setI2CMasterModeEnabled(false);
   accelgyro.setI2CBypassEnabled(true);
   accelgyro.setSleepEnabled(false);
 
   accelgyro.initialize();
-  accelgyro.setFullScaleGyroRange(2);
+  accelgyro.setFullScaleGyroRange(0);
   accelgyro.setFullScaleAccelRange(0);
-  accelgyro.CalibrateGyro();
   accelgyro.CalibrateAccel();
+  accelgyro.CalibrateGyro();
 
   // initialize the magnometer
   magnometer.initialize();
-
 
   // initialize the BMP180
   if (!bmp.begin()) {
@@ -100,9 +93,24 @@ void IMU::init_sensors() {
   }
   lidar.startContinuous();
 
+
+  // Initialise algorithms
+  FusionAhrsInitialise(&ahrs);
+
+  // Set AHRS algorithm settings
+  const FusionAhrsSettings settings = {
+          .convention = FusionConventionNwu,
+          .gain = 5.0f,
+          .gyroscopeRange = 250.0f, /* replace this with actual gyroscope range in degrees/s */
+          .accelerationRejection = 90.0f,
+          .magneticRejection = 90.0f,
+  };
+  FusionAhrsSetSettings(&ahrs, &settings);
+  
+
 }
 
-// Function to compute the dot product of a Vector3D and a 3x3 matrix
+// Compute the calibration mag values
 Mag transformation(RawData raw, Mag mag)    
 {
   mag.x = raw.mx;
@@ -138,64 +146,72 @@ Mag transformation(RawData raw, Mag mag)
   return mag;
 }
 
-// Function to apply the complementary filter
-Angle complementaryFilter(Angle angle, RawData raw, Mag mag) {
-  double currentAngle[3]{angle.roll, angle.pitch, angle.yaw};
-  double newAngle[3];
-  double gyroAngleChange[3];
-
-  // Apply the calibration matrix to the magnetometer
-  mag = transformation(raw, mag);
-
-  // Calculate the change in angle from the gyro
-  gyroAngleChange[0] = ((raw.gx) * (IMU::STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
-  gyroAngleChange[1] = ((raw.gy) * (IMU::STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
-  gyroAngleChange[2] = ((raw.gz) * (IMU::STEP_TIME / 1000)) / 32.8; // 32.8 is the sensitivity of the gyro
-
-
-  // Calculate the angle from the accelerometer and magnetometer
-  newAngle[0] = atan2(raw.ay / 16384.0, sqrt(((raw.ax/ 16384.0) * (raw.ax/ 16384.0) + (raw.az/ 16384.0) * (raw.az/16384.0)))); // 16384 is the sensitivity of the accelerometer
-  newAngle[1] = atan2(raw.ax / 16384.0, sqrt(((raw.ay/ 16384.0) * (raw.ay/ 16384.0) + (raw.az/ 16384.0) * (raw.az/ 16384.0))));
-
-
-  // Tilt compensation
-  double tiltCompensatedY = -mag.calY * cos(newAngle[0]) + mag.calZ * sin(newAngle[0]);
-  double tiltCompensatedX = mag.calX * cos(newAngle[1]) - mag.calY * sin(newAngle[1]) * sin(newAngle[0]) - mag.calZ * sin(newAngle[1]) * cos(newAngle[0]);
-  
-  newAngle[2] = atan2(tiltCompensatedY, tiltCompensatedX);
-
-  for (int i=0; i < 3; ++i) {
-    
-    // Convert to degrees
-    newAngle[i] = newAngle[i] * 180/PI;
-
-    // Apply the complementary filter
-    currentAngle[i] = (ALPHA * (currentAngle[i] + gyroAngleChange[i])) + ((1 - ALPHA) * newAngle[i]); 
-    
-  }
-
-  angle.roll = currentAngle[0];
-  angle.pitch = currentAngle[1];
-  angle.yaw = currentAngle[2];
-
-  return angle;
-}
-
-//Get roll, pitch and yaw angle (degrees)
-void IMU::getRotation(double *roll, double *pitch, double *yaw) {
-
-  // read raw accel/gyro measurements from device
+// Get the current reading from the sensors
+filterData readSensor(filterData data){
+    // read raw accel/gyro measurements from device
   accelgyro.getMotion6(&raw.ax, &raw.ay, &raw.az, &raw.gx, &raw.gy, &raw.gz);
 
   // read raw magnetometer measurements from device
   magnometer.getHeading(&raw.mx, &raw.my, &raw.mz);
 
-  // apply the complementary filter
-  angle = complementaryFilter(angle, raw, mag);
+  // Apply the calibration matrix to the magnetometer
+  mag = transformation(raw, mag);
 
-  *roll = angle.roll;
-  *pitch = angle.pitch;
-  *yaw = angle.yaw;
+  data.gx = raw.gx / 131;
+  data.gy = raw.gy / 131;
+  data.gz = raw.gz / 131;
+
+  data.ax = raw.ax / 16384.0;
+  data.ay = raw.ay / 16384.0;
+  data.az = raw.az / 16384.0;
+
+  data.mx = mag.calX;
+  data.my = mag.calY;
+  data.mz = mag.calZ;
+
+  return data;
+}
+
+//Get euler rotation
+void IMU::getEulerRotation(double *roll, double *pitch, double *yaw) {
+
+  data = readSensor(data);
+
+  FusionVector gyroscope = {data.gx, data.gy, data.gz}; // replace this with actual gyroscope data in degrees/s
+  FusionVector accelerometer = {data.ax, data.ay, data.az}; // replace this with actual accelerometer data in g
+  FusionVector magnetometer = {data.mx, data.my, data.mz}; // replace this with actual magnetometer data in arbitrary units
+
+  // Update gyroscope AHRS algorithm
+  FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, SAMPLE_PERIOD);
+
+  const FusionQuaternion quaternion = FusionAhrsGetQuaternion(&ahrs);
+  const FusionEuler euler = FusionQuaternionToEuler(quaternion);
+
+  *roll = euler.angle.roll;
+  *pitch = euler.angle.pitch;
+  *yaw = euler.angle.yaw;
+
+}
+
+//Get quaternion rotation
+void IMU::getQuaternionRotation(double *w, double *x, double *y, double *z) {
+
+  data = readSensor(data);
+
+  FusionVector gyroscope = {data.gx, data.gy, data.gz}; // replace this with actual gyroscope data in degrees/s
+  FusionVector accelerometer = {data.ax, data.ay, data.az}; // replace this with actual accelerometer data in g
+  FusionVector magnetometer = {data.mx, data.my, data.mz}; // replace this with actual magnetometer data in arbitrary units
+
+  // Update gyroscope AHRS algorithm
+  FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, SAMPLE_PERIOD);
+
+  const FusionQuaternion quaternion = FusionAhrsGetQuaternion(&ahrs);
+  const FusionEuler euler = FusionQuaternionToEuler(quaternion);
+
+  *w = quaternion.element.w;
+  *x = quaternion.element.x;
+  *y = quaternion.element.y;
+  *z = quaternion.element.z;
 
 }
 
@@ -212,4 +228,42 @@ void IMU::getPressure(double *pressure) {
 // Get the temperature from the BMP085 (C°)
 void IMU::getTemperature(double *temperature) {
   *temperature = bmp.readTemperature();
+}
+
+// Function to test the sensors
+void IMU::test(float *gx, float *gy, float *gz, float *ax, float *ay, float *az, float *mx, float *my, float *mz){
+  // read raw accel/gyro measurements from device
+  accelgyro.getMotion6(&raw.ax, &raw.ay, &raw.az, &raw.gx, &raw.gy, &raw.gz);
+
+  // read raw magnetometer measurements from device
+  magnometer.getHeading(&raw.mx, &raw.my, &raw.mz);
+
+  // Apply the calibration matrix to the magnetometer
+  mag = transformation(raw, mag);
+  
+  // apply the complementary filter
+  //angle = complementaryFilter(angle, raw, mag);
+
+  data.gx = raw.gx / 32.8;
+  data.gy = raw.gy / 32.8;
+  data.gz = raw.gz / 32.8;
+
+  data.ax = raw.ax / 16384.0;
+  data.ay = raw.ay / 16384.0;
+  data.az = raw.az / 16384.0;
+
+  data.mx = mag.calX;
+  data.my = mag.calY;
+  data.mz = mag.calZ;
+  
+  *gx = data.gx;
+  *gy = data.gy;
+  *gz = data.gz;
+  *ax = data.ax;
+  *ay = data.ay;
+  *az = data.az;
+  *mx = data.mx;
+  *my = data.my;
+  *mz = data.mz;
+
 }

@@ -55,7 +55,7 @@ FlightController::FlightController(double dt) : dt(dt),
     RotControlZ(0.1,0,0,dt),
     RotControlX(0.1,0,0,dt),
     RotControlY(0.1,0,0,dt),
-    drone(0.25, 0.25, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0000008, 0.000003),
+    drone(0.25, 0.25, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0000008, 0.0000003),
     target_z(0),
     target_roll(0),
     target_pitch(0),
@@ -71,7 +71,15 @@ FlightController::FlightController(double dt) : dt(dt),
 
 motorData FlightController::calculate() {
     resetTargetAngle(target_roll, target_pitch, target_yaw, target_z); //makes it target 0
-    imu.getRotation(&roll, &pitch, &yaw); imu.getAltitude(&z);//get the current angle and altitude
+    //time the get rotation function
+    unsigned long start = millis();
+    imu.getRotation(&roll, &pitch, &yaw); 
+    unsigned long end = millis();
+    Serial.print("Time to get rotation: "); Serial.println(end - start);
+    start = millis();
+    imu.getAltitude(&z);//get the current angle and altitude
+    end = millis();
+    Serial.print("Time to get altitude: "); Serial.println(end - start);
     roll *= M_PI/180; pitch *= M_PI/180; yaw *= M_PI/180; //convert to radians
 
 

@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <ESP32Servo.h>
 #include <ESP32PWM.h>
+#include <ArduinoEigen.h>
+
 
 
 struct motorData {

@@ -170,7 +170,6 @@ void comTask(void *pvParameters) {
 int rhod_test = 0;
 unsigned long startTime;
 unsigned long endTime;
-unsigned long executionTime;
 
 void controlTask(void *pvParameters) {
   while (1) {
@@ -182,10 +181,9 @@ void controlTask(void *pvParameters) {
     control();
 
     endTime = millis(); // Get the current time again
-    executionTime = endTime - startTime; // Calculate the execution time
-
+  
     Serial.print("Execution time: ");
-    Serial.print(executionTime);
+    Serial.print(endTime - startTime);
     Serial.println(" ms");
     if ((run == false)){
       data.omega_1 = 0;

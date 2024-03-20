@@ -73,7 +73,7 @@ motorData FlightController::calculate() {
     resetTargetAngle(target_roll, target_pitch, target_yaw, target_z); //makes it target 0
     //time the get rotation function
     unsigned long start = millis();
-    imu.getRotation(&roll, &pitch, &yaw); 
+    imu.getEulerRotation(&roll, &pitch, &yaw); 
     unsigned long end = millis();
     Serial.print("Time to get rotation: "); Serial.println(end - start);
     start = millis();

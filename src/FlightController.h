@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <ESP32Servo.h>
 #include <ESP32PWM.h>
-#include <ArduinoEigen.h>
+
 
 
 
@@ -73,7 +73,7 @@ private:
     PIDController RotControlX;
     PIDController RotControlY;
     Tricopter drone;
-    motorData motorValues;
+    motorData Output;
 
     // Member variables
     double target_z;
@@ -85,6 +85,8 @@ private:
     double roll;
     double pitch;
     double yaw;
+
+    Eigen::Quaterniond q;
 
     double z_error;
     double U_z;

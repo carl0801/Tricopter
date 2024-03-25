@@ -24,7 +24,7 @@ Servo esc1;
 Servo esc2;
 Servo esc3;
 
-motorData data;
+motorData moterValues;
 
 
 double x = 0;
@@ -79,20 +79,20 @@ void processCommand(const char command) {
 
 FlightController flightController(STEP_TIME);
 
-void updateMotor(motorData data) {
+void updateMotor(motorData moterValues) {
   //map the values to the correct of range 0-180 from 0-2500
-  data.omega_1 = map(data.omega_1, 0, 4000, 0, 100);
-  data.omega_2 = map(data.omega_2, 0, 4000, 0, 100);
-  data.omega_3 = map(data.omega_3, 0, 4000, 0, 100);
+  moterValues.omega_1 = map(moterValues.omega_1, 0, 4000, 0, 100);
+  moterValues.omega_2 = map(moterValues.omega_2, 0, 4000, 0, 100);
+  moterValues.omega_3 = map(moterValues.omega_3, 0, 4000, 0, 100);
   
   //make sure the value is max 100
-  data.omega_1 = std::min(data.omega_1, 100.0);
-  data.omega_2 = std::min(data.omega_2, 100.0);
-  data.omega_3 = std::min(data.omega_3, 100.0);
+  moterValues.omega_1 = std::min(moterValues.omega_1, 100.0);
+  moterValues.omega_2 = std::min(moterValues.omega_2, 100.0);
+  moterValues.omega_3 = std::min(moterValues.omega_3, 100.0);
 
-  esc1.write(data.omega_1);
-  esc2.write(data.omega_2);
-  esc3.write(data.omega_3);
+  esc1.write(moterValues.omega_1);
+  esc2.write(moterValues.omega_2);
+  esc3.write(moterValues.omega_3);
 }
 
 
@@ -186,11 +186,11 @@ void controlTask(void *pvParameters) {
     Serial.print(endTime - startTime);
     Serial.println(" ms");
     if ((run == false)){
-      data.omega_1 = 0;
-      data.omega_2 = 0;
-      data.omega_3 = 0;
-      data.alpha = 0;
-      updateMotor(data);
+      moterValues.omega_1 = 0;
+      moterValues.omega_2 = 0;
+      moterValues.omega_3 = 0;
+      moterValues.alpha = 0;
+      updateMotor(moterValues);
       vTaskDelete(NULL);
     }
     //rhod_test++;

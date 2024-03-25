@@ -194,8 +194,8 @@ void IMU::getEulerRotation(double *roll, double *pitch, double *yaw) {
 }
 
 //Get quaternion rotation
-void IMU::getQuaternionRotation(double *w, double *x, double *y, double *z) {
-
+//void IMU::getQuaternionRotation(double *w, double *x, double *y, double *z) {
+void IMU::getQuaternionRotation(Eigen::Quaterniond *q) {
   data = readSensor(data);
 
   FusionVector gyroscope = {data.gx, data.gy, data.gz}; // replace this with actual gyroscope data in degrees/s
@@ -208,11 +208,7 @@ void IMU::getQuaternionRotation(double *w, double *x, double *y, double *z) {
   const FusionQuaternion quaternion = FusionAhrsGetQuaternion(&ahrs);
   const FusionEuler euler = FusionQuaternionToEuler(quaternion);
 
-  *w = quaternion.element.w;
-  *x = quaternion.element.x;
-  *y = quaternion.element.y;
-  *z = quaternion.element.z;
-
+  *q = Eigen::Quaterniond(quaternion.element.w, quaternion.element.x, quaternion.element.y, quaternion.element.z);
 }
 
 //Get alttitude from ToF sensor

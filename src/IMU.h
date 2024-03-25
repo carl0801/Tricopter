@@ -7,6 +7,7 @@
 #include <VL53L0X.h>
 #include "MPU6050.h"
 #include "HMC5883L.h"
+#include <ArduinoEigen.h>
 
 #define SAMPLE_PERIOD (0.01f) // 20ms sample period (50Hz)
 
@@ -39,7 +40,7 @@ class IMU {
         // Functions
         void init_sensors();
         void getEulerRotation(double *roll, double *pitch, double *yaw);
-        void getQuaternionRotation(double *w, double *x, double *y, double *z);
+        void getQuaternionRotation(Eigen::Quaterniond *quaternion);
         void getAltitude(double *altitude);
         void getPressure(double *pressure);
         void getTemperature(double *temperature);

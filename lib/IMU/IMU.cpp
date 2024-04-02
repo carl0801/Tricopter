@@ -183,6 +183,8 @@ void IMU::getAltitude(double* altitude) {
 
 };
 
+
+
 /* Get the pressure from the BMP085 (Pa)
 void IMU::getPressure(double *pressure) {
   #if defined(HW_290_ADDRESS) 

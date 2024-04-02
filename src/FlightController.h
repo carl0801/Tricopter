@@ -19,7 +19,7 @@ struct motorData {
 
 //void updateMotor(double omega_1, double omega_2, double omega_3, double alpha);
 
-void resetTargetAngle(double& roll, double& pitch, double& yaw, double& z);
+void resetTargetAngle(double& yaw, double& x, double& y, double& z);
 
 class Tricopter {
 public:
@@ -68,6 +68,8 @@ public:
     motorData calculate();
 private:
     double dt;
+    PIDController TransControlX;
+    PIDController TransControlY;
     PIDController TransControlZ;
     PIDController RotControlZ;
     PIDController RotControlX;
@@ -76,20 +78,28 @@ private:
     motorData Output;
 
     // Member variables
+    double target_x;
+    double target_y;
     double target_z;
     double target_roll;
     double target_pitch;
     double target_yaw;
 
+    double x;
+    double y;
     double z;
     double roll;
     double pitch;
     double yaw;
 
     Eigen::Quaterniond q;
-
+    
+    double x_error;
+    double U_X;
+    double y_error;
+    double U_Y;
     double z_error;
-    double U_z;
+    double U_Z;
     double roll_error;
     double U_r;
     double pitch_error;

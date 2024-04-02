@@ -7,10 +7,10 @@ IMU imu;
 
 
 
-void resetTargetAngle(double& roll, double& pitch, double& yaw, double& z) {
-    roll = 0.0;
-    pitch = 0.0;
+void resetTargetAngle(double& yaw, double& x, double& y, double& z) {
     yaw = 0.0;
+    x = 0.0;
+    y = 0.0;
     z = 0.0;
 }
 
@@ -51,14 +51,16 @@ double PIDController::calculate(double error) {
 }
 
 FlightController::FlightController(double dt) : dt(dt),
-    TransControlZ(0.1,0,0,dt),
-    RotControlZ(0.1,0,0,dt),
-    RotControlX(0.1,0,0,dt),
-    RotControlY(0.1,0,0,dt),
+    TransControlX(0.2, 0.01, 0.2, dt),
+    TransControlY(0.2, 0.01, 0.2),
+    TransControlZ(0.9545651916204778,0.04441356161831689,4.0843239598328),
+    RotControlZ(0.08508958604791192, 0.00923672770996732, 0.4286804507510326),
+    RotControlX(0.5, 0, 1.2),
+    RotControlY(0.3, 0, 1.2, dt),
     drone(0.25, 0.25, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0000008, 0.0000003),
+    target_x(0),
+    target_y(0),
     target_z(0),
-    target_roll(0),
-    target_pitch(0),
     target_yaw(0),
     z(0),
     roll(0),
@@ -70,10 +72,11 @@ FlightController::FlightController(double dt) : dt(dt),
     alpha(0) {}
 
 motorData FlightController::calculate() {
-    resetTargetAngle(target_roll, target_pitch, target_yaw, target_z); //makes it target 0
+    resetTargetAngle(target_yaw, target_x, target_y, target_z); //makes it target 0
     //time the get rotation function
     unsigned long start = millis();
-    imu.getQuaternionRotation(&q); 
+    //imu.getQuaternionRotation(&q);
+    imu.getEulerRotation(&roll, &pitch, &yaw); 
     unsigned long end = millis();
     Serial.print("Time to get rotation: "); Serial.println(end - start);
     start = millis();
@@ -85,27 +88,39 @@ motorData FlightController::calculate() {
     //Eigen::Matrix3f rot = q.normalized().toRotationMatrix();
     
     //convert rotationmatrix to XYZ euler angles
-    Eigen::Vector3d rpy = q.toRotationMatrix().eulerAngles(0, 1, 2);
+    //Eigen::Vector3d rpy = q.toRotationMatrix().eulerAngles(0, 1, 2);
 
+    //convert the target x from earth to drone frame
+    
 
+    
 
 
     z_error = target_z - z;
-    U_z = TransControlZ.calculate(-z_error);
-    roll_error = target_roll - rpy[0];
-    U_r = RotControlX.calculate(-roll_error);
-    pitch_error = target_pitch - rpy[1];
+    U_Z = TransControlZ.calculate(z_error);
+    U_Z -= drone.mass * drone.gravity;
+
+    x_error = (target_x * cos(yaw) + target_y * sin(yaw)) - x;
+    U_X = TransControlX.calculate(x_error);
+
+    pitch_error = U_X - pitch;
     U_p = RotControlY.calculate(pitch_error);
-    yaw_error = target_yaw - rpy[2];
+
+    y_error = (target_y * cos(yaw) - target_x * sin(yaw)) - y;
+    U_Y = TransControlY.calculate(y_error);
+
+    roll_error = U_Y - roll;
+    U_r = RotControlX.calculate(roll_error);
+
+    yaw_error = target_yaw - yaw;
     U_y = RotControlZ.calculate(yaw_error);
     
 
-    U_z = U_z - drone.gravity*drone.mass;
 
 
 
 
-    term1_12 = (2 * drone.l_0 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2));
+    term1_12 = (2 * drone.l_0 * U_Z) / (drone.k_t * (drone.l_0 + drone.l_2));
     term2_12 = (2 * U_r) / (drone.l_1 * drone.k_t);
     term3_12 = (2 * U_p) / (drone.k_t * (drone.l_0 + drone.l_2));
     omega_1_mid = -term1_12 - term2_12 + term3_12; 
@@ -113,15 +128,14 @@ motorData FlightController::calculate() {
     Output.omega_1 = (omega_1_mid < 0) ? 0 : sqrt(omega_1_mid) / 2;
     Output.omega_2 = (omega_2_mid < 0) ? 0 : sqrt(omega_2_mid) / 2;
 
-    term1_3p1 = ((drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2)));
+    term1_3p1 = ((drone.l_2 * U_Z) / (drone.k_t * (drone.l_0 + drone.l_2)));
     term1_3p2 = (U_p / (drone.k_t * (drone.l_0 + drone.l_2))) ;
-    term1_3 = pow(term1_3p1 - term1_3p2, 2);
+    term1_3 = pow(-term1_3p1 - term1_3p2, 2);
 
 
-    term2_3p1 = ((drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0)) ;
+    term2_3p1 = ((drone.k_d * U_Z) / (drone.k_t * drone.k_t * drone.l_0)) ;
     term2_3p2 = (U_y / (drone.l_0 * drone.k_t));
-
-    term2_3 = pow(term2_3p1 + term2_3p2, 2);
+    term2_3 = pow(-term2_3p1 + term2_3p2, 2);
 
     Output.omega_3 = pow((term1_3 + term2_3), 0.25);
 
@@ -133,8 +147,8 @@ motorData FlightController::calculate() {
     Serial.print("alpha: "); Serial.println(alpha*180/M_PI);
 
 
-    alpha_term1 = -((drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0) + U_y / (drone.l_0 * drone.k_t));
-    alpha_term2 = (drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2)) - U_p / (drone.k_t * (drone.l_0 + drone.l_2));
+    alpha_term1 = -((drone.k_d * U_Z) / (drone.k_t * drone.k_t * drone.l_0) + U_y / (drone.l_0 * drone.k_t));
+    alpha_term2 = -(drone.l_2 * U_Z) / (drone.k_t * (drone.l_0 + drone.l_2)) - U_p / (drone.k_t * (drone.l_0 + drone.l_2));
     Output.alpha = atan2(alpha_term1, alpha_term2);
 
     return Output;

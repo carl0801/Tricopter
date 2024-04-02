@@ -158,8 +158,11 @@ def tricopter_flight_controller():
 
         #calculate target x and y to move the drone using yaw angle
         #At yaw = 0, x is forward and y is right
-        target_x = np.cos(target_yaw) * o_target_x - np.sin(target_yaw) * o_target_y
-        target_y = np.sin(target_yaw) * o_target_x + np.cos(target_yaw) * o_target_y
+        #target_x = np.cos(target_yaw) * o_target_x - np.sin(target_yaw) * o_target_y
+        #target_y = np.sin(target_yaw) * o_target_x + np.cos(target_yaw) * o_target_y
+
+        target_x = np.cos(yaw) * o_target_x - np.sin(yaw) * o_target_y
+        target_y = np.sin(yaw) * o_target_x + np.cos(yaw) * o_target_y
 
     
         

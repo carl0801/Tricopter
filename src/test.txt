@@ -1,31 +1,26 @@
 #include <Arduino.h>
-#include <IMU.h>
-
-// Constants
-const double STEP_TIME = 20; // timeInterval
-
-double roll = 0;
-double pitch = 0;
-double yaw = 0;
-double z1 = 0;
+#include "IMU.h"
 
 IMU imu;
 
-void setup() {
-    // put your setup code here, to run once:
-    Serial.begin(9600);
+float eu[3];
 
-    // Initialize the IMU
-    imu.init_sensors();
+void setup() {
+    Serial.begin(1000000);
+    imu.init();
+
 }
 
 void loop() {
-  //Get roll, pitch and yaw angle and alttitude from ToF sensor
-  imu.getRotation(&roll, &pitch, &yaw);
-  
-  Serial.print("X:"); Serial.print(roll);
-  Serial.print("Y:"); Serial.print(pitch);
-  Serial.print("Z:"); Serial.println(yaw);
+ 
+    imu.update_IMU();
+    imu.getEulerRad(&eu[0], &eu[1], &eu[2]);
+    imu.sendToPC(&eu[0], &eu[1], &eu[2]);
 
-  delay(imu.STEP_TIME);
+    /*Serial.print(eu[0]);
+    Serial.print(" ");
+    Serial.print(eu[1]);
+    Serial.print(" ");
+    Serial.println(eu[2]);*/
+
 }

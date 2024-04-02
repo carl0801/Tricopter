@@ -1,6 +1,7 @@
 {
     "files.associations": {
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "chrono": "cpp"
     },
     "cmake.configureOnOpen": false
 }

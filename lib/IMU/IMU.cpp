@@ -64,9 +64,9 @@ void IMU::update_IMU() {
   deltat = (double)(time_now - time_former) / 1000000.0f;
   time_former = time_now;
   
-  FusionVector gyroscope = {-gyro[1], -gyro[0], -gyro[2]}; // replace this with actual gyroscope data in degrees/s
-  FusionVector accelerometer = {accel[1], accel[0], accel[2]}; // replace this with actual accelerometer data in g
-  FusionVector magnetometer = {magnetom[1], magnetom[0], -magnetom[2]}; // replace this with actual magnetometer data in arbitrary units
+  FusionVector gyroscope = {-gyro[1], -gyro[0], -gyro[2]}; //{gyro[0], -gyro[1], -gyro[2]}; 
+  FusionVector accelerometer = {accel[1], accel[0], accel[2]}; //{-accel[0], accel[1], accel[2]};
+  FusionVector magnetometer = {magnetom[1], magnetom[0], -magnetom[2]}; //{magnetom[1], -magnetom[0], magnetom[2]};
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);

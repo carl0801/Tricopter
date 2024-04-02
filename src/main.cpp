@@ -215,7 +215,7 @@ void setup() {
 
   Wire.begin();
 
-  imu.init_sensors();
+  imu.init_IMU();
 
 
   delay(1000);

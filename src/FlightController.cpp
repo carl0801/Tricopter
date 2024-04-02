@@ -76,7 +76,7 @@ motorData FlightController::calculate() {
     //time the get rotation function
     unsigned long start = millis();
     //imu.getQuaternionRotation(&q);
-    imu.getEulerRotation(&roll, &pitch, &yaw); 
+    imu.getEulerRad(&roll, &pitch, &yaw); 
     unsigned long end = millis();
     Serial.print("Time to get rotation: "); Serial.println(end - start);
     start = millis();

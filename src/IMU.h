@@ -33,20 +33,20 @@ class IMU {
         void read_sensors();
 
         // Variables
-        float time_now;
-        float time_former;
-        float deltat;
+        double time_now;
+        double time_former;
+        double deltat;
 
         // Sensor variables
-        float accel[3]; 
-        float magnetom[3];
-        float gyro[3];
+        double accel[3]; 
+        double magnetom[3];
+        double gyro[3];
 
-        float yaw_offset = (2.61f - M_PI_2);
+        double yaw_offset = (2.61f - M_PI_2);
 
         // Data variables
-        float euler_rad[3];
-        float quaternians[4];
+        double euler_rad[3];
+        double quaternians[4];
         double position[3];
 
 
@@ -55,12 +55,12 @@ class IMU {
         // Functions
         void init_IMU();
         void update_IMU();
-        void sendToPC(float* data1, float* data2, float* data3);
+        void sendToPC(double* data1, double* data2, double*);
 
         // get data functions
-        void getEulerRad(float* roll, float* pitch, float* yaw);
-        void getQuaternians(float* w, float* x, float* y, float* z);
-        void getPosition(float* x, float* y, float* z);
+        void getEulerRad(double* roll, double* pitch, double* yaw);
+        void getQuaternians(double* w, double* x, double* y, double* z);
+        void getPosition(double* x, double* y, double* z);
 
         
 };

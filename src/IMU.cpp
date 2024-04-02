@@ -35,7 +35,7 @@ void IMU::read_sensors() {
 }
 
 // Send data to PC
-void IMU::sendToPC(float* data1, float* data2, float* data3)
+void IMU::sendToPC(double* data1, double* data2, double* data3)
 { 
 
   byte* byteData1 = (byte*)(data1);
@@ -55,7 +55,7 @@ void IMU::update_IMU() {
 
   // Calculate time since last loop
   time_now = micros();
-  deltat = (float)(time_now - time_former) / 1000000.0f;
+  deltat = (double)(time_now - time_former) / 1000000.0f;
   time_former = time_now;
   
   FusionVector gyroscope = {-gyro[1], -gyro[0], -gyro[2]}; // replace this with actual gyroscope data in degrees/s
@@ -130,7 +130,7 @@ void IMU::init_IMU() {
   FusionAhrsSetSettings(&ahrs, &settings);
 
   // calculate yaw offset
-  /*float offset = 0;
+  /*double offset = 0;
   for (int i = 0; i < (SAMPLE_RATE * 2); i++) {
     update_IMU();
     offset += euler_rad[2];
@@ -140,14 +140,14 @@ void IMU::init_IMU() {
 }
 
 // Get euler angles
-void IMU::getEulerRad(float* roll, float* pitch, float* yaw) {
+void IMU::getEulerRad(double* roll, double* pitch, double* yaw) {
   *roll = euler_rad[0];
   *pitch = euler_rad[1];
   *yaw = euler_rad[2];
 }
 
 // Get quaternians
-void IMU::getQuaternians(float* w, float* x, float* y, float* z) {
+void IMU::getQuaternians(double* w, double* x, double* y, double* z) {
   *w = quaternians[0];
   *x = quaternians[1];
   *y = quaternians[2];
@@ -155,7 +155,7 @@ void IMU::getQuaternians(float* w, float* x, float* y, float* z) {
 }
 
 // Get position
-void IMU::getPosition(float* x, float* y, float* z) {
+void IMU::getPosition(double* x, double* y, double* z) {
   *x = position[0];
   *y = position[1];
   *z = position[2];

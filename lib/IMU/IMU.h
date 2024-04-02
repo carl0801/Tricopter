@@ -61,6 +61,7 @@ class IMU {
         void getEulerRad(double* roll, double* pitch, double* yaw);
         void getQuaternians(double* w, double* x, double* y, double* z);
         void getPosition(double* x, double* y, double* z);
+        void getAltitude(double* altitude);
 
         
 };

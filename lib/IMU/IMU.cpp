@@ -17,6 +17,12 @@ FusionAhrs ahrs;
 
 MPU9250 MPU(Wire, MPU9250_ADDRESS);
 
+#ifdef VL53L0X_ADDRESS
+
+  VL53L0X lidar;
+
+#endif //VL53L0X_ADDRESS
+
 
 // Read data from MPU9250
 void IMU::read_sensors() {
@@ -84,8 +90,8 @@ void IMU::update_IMU() {
   position[2] = earth.axis.z * GRAVITY;
 
   // Update euler angles
-  euler_rad[0] = (euler.angle.roll * DEG_TO_RAD) ;//- 3.1f;
-  euler_rad[1] = (euler.angle.pitch * DEG_TO_RAD) ;//- 0.03f;
+  euler_rad[0] = (euler.angle.roll * DEG_TO_RAD) ;
+  euler_rad[1] = (euler.angle.pitch * DEG_TO_RAD) ;
   euler_rad[2] = (euler.angle.yaw * DEG_TO_RAD) - yaw_offset;
 
   // Update quaternion
@@ -129,13 +135,19 @@ void IMU::init_IMU() {
   };
   FusionAhrsSetSettings(&ahrs, &settings);
 
-  // calculate yaw offset
-  /*double offset = 0;
-  for (int i = 0; i < (SAMPLE_RATE * 2); i++) {
-    update_IMU();
-    offset += euler_rad[2];
-  }
-  yaw_offset = offset / (SAMPLE_RATE * 2);*/
+  #ifdef VL53L0X_ADDRESS
+
+    Wire.begin();
+
+    lidar.setTimeout(500);
+    if (!lidar.init())
+    {
+      Serial.println("Failed to detect and initialize sensor!");
+      while (1) {}
+    }
+    lidar.startContinuous();
+
+  #endif //VL53L0X_ADDRESS
 
 }
 
@@ -160,3 +172,33 @@ void IMU::getPosition(double* x, double* y, double* z) {
   *y = position[1];
   *z = position[2];
 }
+
+//Get alttitude from ToF sensor
+void IMU::getAltitude(double* altitude) {
+  #if defined(VL53L0X_ADDRESS)
+    *altitude = lidar.readRangeContinuousMillimeters();
+  #else
+    *altitude = 0;
+  #endif //VL53L0X_ADDRESS
+
+};
+
+/* Get the pressure from the BMP085 (Pa)
+void IMU::getPressure(double *pressure) {
+  #if defined(HW_290_ADDRESS) 
+    *pressure = bmp.readPressure();
+  #else
+    *pressure = 0;
+
+  #endif //HW_290_ADDRESS
+
+}
+
+// Get the temperature from the BMP085 (C°)
+void IMU::getTemperature(double *temperature) {
+  #if defined(HW_290_ADDRESS) 
+    *temperature = bmp.readTemperature();
+  #else
+    *temperature = 0;
+  #endif //HW_290_ADDRESS
+}*/

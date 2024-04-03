@@ -64,9 +64,9 @@ void IMU::update_IMU() {
   deltat = (double)(time_now - time_former) / 1000000.0f;
   time_former = time_now;
   
-  FusionVector gyroscope = {-gyro[1], -gyro[0], -gyro[2]}; //{gyro[0], -gyro[1], -gyro[2]}; 
-  FusionVector accelerometer = {accel[1], accel[0], accel[2]}; //{-accel[0], accel[1], accel[2]};
-  FusionVector magnetometer = {magnetom[1], magnetom[0], -magnetom[2]}; //{magnetom[1], -magnetom[0], magnetom[2]};
+  FusionVector gyroscope = {gyro[0], gyro[1], -gyro[2]};  
+  FusionVector accelerometer = {-accel[0], -accel[1], accel[2]}; 
+  FusionVector magnetometer = {magnetom[1], magnetom[0], -magnetom[2]};
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
@@ -126,7 +126,7 @@ void IMU::init_IMU() {
 
   // Set AHRS algorithm settings
   const FusionAhrsSettings settings = {
-          .convention = FusionConventionNed,
+          .convention = FusionConventionNed, //Change this to FusionConventionNwu if turn 180 degrees
           .gain = 0.7f,
           .gyroscopeRange = 500.0f, /* replace this with actual gyroscope range in degrees/s */
           .accelerationRejection = 10.0f,

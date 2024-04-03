@@ -51,17 +51,19 @@ double PIDController::calculate(double error) {
 }
 
 FlightController::FlightController(double dt) : dt(dt),
-    TransControlX(0.2, 0.01, 0.2, dt),
-    TransControlY(0.2, 0.01, 0.2),
-    TransControlZ(0.9545651916204778,0.04441356161831689,4.0843239598328),
-    RotControlZ(0.08508958604791192, 0.00923672770996732, 0.4286804507510326),
-    RotControlX(0.5, 0, 1.2),
-    RotControlY(0.3, 0, 1.2, dt),
+    TransControlX(0.1965757725903785, 0.010342614229023009, 0.2051560043445344, dt),
+    TransControlY(0.21248410411380658, 0.12152492457843977, 0.32629781318334894, dt),
+    TransControlZ(0.9945873259566484, 0.04333792067287307, 4.150268773767612, dt),
+    RotControlZ(0.08935726607591638, 0.009453101478065287, 0.41156854675899196, dt),
+    RotControlX(0.27778911515638605, -0.017256089514188208, 0.8259220175587367, dt),
+    RotControlY(0.30164029571075623, 0.000128899544963653, 1.1998256078947662, dt),
     drone(0.25, 0.25, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0000008, 0.0000003),
     target_x(0),
     target_y(0),
     target_z(0),
     target_yaw(0),
+    x(0),
+    y(0),
     z(0),
     roll(0),
     pitch(0),
@@ -100,13 +102,13 @@ motorData FlightController::calculate() {
     U_Z = TransControlZ.calculate(z_error);
     U_Z -= drone.mass * drone.gravity;
 
-    x_error = (target_x * cos(yaw) + target_y * sin(yaw)) - x;
+    x_error = (cos(yaw)*(target_x - x) + sin(yaw)*(target_y - y));
     U_X = TransControlX.calculate(x_error);
 
     pitch_error = U_X - pitch;
     U_p = RotControlY.calculate(pitch_error);
 
-    y_error = (target_y * cos(yaw) - target_x * sin(yaw)) - y;
+    y_error = (-sin(yaw)*(target_x - x) + cos(yaw)*(target_y - y));
     U_Y = TransControlY.calculate(y_error);
 
     roll_error = U_Y - roll;

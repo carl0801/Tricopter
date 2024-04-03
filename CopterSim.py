@@ -60,7 +60,7 @@ class PIDController:
         return output
 
 class Quadcopter:
-    def __init__(self, mass, l_0, gravity, drag, j_x = 0.05, j_y = 0.05, j_z = 0.02, k_t =0.00001 , k_d = 0.0000003 ):  #k_d = 0.0003
+    def __init__(self, mass, l_0, gravity, drag, j_x = 0.05, j_y = 0.05, j_z = 0.02, k_t =0.01 , k_d = 0.0000003 ):  #k_d = 0.0003
         self.mass = mass
         self.l_0 = l_0
         self.gravity = gravity
@@ -73,25 +73,84 @@ class Quadcopter:
         self.l_1 = np.sin(60 * np.pi / 180) * l_0
         self.l_2 = np.sin(-60 * np.pi / 180) * l_0
 
+def opposite_angle(angle_deg):
+    if angle_deg < 0:
+        return angle_deg + 360
+    else:
+        return angle_deg - 360
+
+def quaternion_rotation(current_angle, target_angle):
+    # Convert angles to radians
+    current_angle_rad = np.radians(current_angle)
+    target_angle_rad = np.radians(target_angle)
+
+    # Define the rotation axis (unit vector)
+    rotation_axis = [0, 0, 1]
+
+    # Calculate the angle of rotation
+    angle = target_angle_rad - current_angle_rad
+
+    # Calculate the quaternion components
+    q0 = np.cos(angle / 2)
+    q1 = np.sin(angle / 2) * rotation_axis[0]
+    q2 = np.sin(angle / 2) * rotation_axis[1]
+    q3 = np.sin(angle / 2) * rotation_axis[2]
+
+    # Create the quaternion
+    q = np.array([q0, q1, q2, q3])
+
+    # Normalize the quaternion
+    q /= np.linalg.norm(q)
+
+    # Convert quaternion to rotation matrix
+    rotation_matrix = np.array([
+        [1 - 2 * (q2**2 + q3**2), 2 * (q1*q2 - q0*q3), 2 * (q0*q2 + q1*q3)],
+        [2 * (q1*q2 + q0*q3), 1 - 2 * (q1**2 + q3**2), 2 * (q2*q3 - q0*q1)],
+        [2 * (q1*q3 - q0*q2), 2 * (q0*q1 + q2*q3), 1 - 2 * (q1**2 + q2**2)]
+    ])
+
+    output_angle_rad = np.arccos((np.trace(rotation_matrix) - 1) / 2)
+    output_angle_deg = np.degrees(output_angle_rad)
+
+    opposite_target_angle = opposite_angle(target_angle)
+    
+    if (current_angle < -178 and current_angle >= -180) and (target_angle > 178 and target_angle <= 180):
+        #print("here")
+        output_angle_deg = -output_angle_deg
+    # elif current angle is 179+-1 and target angle is -179+-1 then outputangle is positive
+    elif (current_angle > 178 and current_angle <= 180) and (target_angle < -178 and target_angle >= -180):
+        output_angle_deg = output_angle_deg
+    # elif current angle is -179+-1 and target angle is 179+-1 then outputangle is negative
+        
+    elif (output_angle_deg + current_angle < target_angle + 0.01 and output_angle_deg + current_angle > target_angle - 0.01) or (output_angle_deg + current_angle < opposite_target_angle + 0.01 and output_angle_deg + current_angle > opposite_target_angle - 0.01):
+        output_angle_deg = output_angle_deg
+        
+    else:
+        output_angle_deg = -output_angle_deg
+
+    return output_angle_deg
+
+
+
 
 def tricopter_flight_controller():
     
-    trans_control_x = PIDController(0.2, 0.01, 0.2, dt)
-    rot_control_pitch = PIDController(0.3, 0, 1.2, dt)
+    trans_control_x = PIDController(0.1965757725903785, 0.010342614229023009, 0.2051560043445344, dt)
+    rot_control_pitch = PIDController(0.30164029571075623, 0.000128899544963653, 1.1998256078947662, dt)
 
 
-    trans_control_y = PIDController(0.2, 0.01, 0.2)
-    rot_control_roll = PIDController(0.5, 0, 1.2)
+    trans_control_y = PIDController(0.21248410411380658, 0.12152492457843977, 0.32629781318334894)
+    rot_control_roll = PIDController(0.27778911515638605, -0.017256089514188208, 0.8259220175587367)
 
-    trans_control_z = PIDController(0.9545651916204778,0.04441356161831689,4.0843239598328)
-
-
-    rot_control_yaw = PIDController(0.08508958604791192, 0.00923672770996732, 0.4286804507510326)
+    trans_control_z = PIDController(0.9945873259566484, 0.04333792067287307, 4.150268773767612)
 
 
+    rot_control_yaw = PIDController(0.08935726607591638, 0.009453101478065287, 0.41156854675899196, dt)
 
 
-    drone = Quadcopter(0.25, 0.25, 9.81, 0.02)
+
+
+    drone = Quadcopter(0.25, 0.33, 9.81, 0.02)
 
 
 
@@ -150,6 +209,8 @@ def tricopter_flight_controller():
 
     stopped_spinning = False
     yawStopper = 0
+    prev_alpha = 0
+    servo_alpha = 0
     i = 0
     time = 10000*dt
     while i < time:
@@ -161,8 +222,8 @@ def tricopter_flight_controller():
         #target_x = np.cos(target_yaw) * o_target_x - np.sin(target_yaw) * o_target_y
         #target_y = np.sin(target_yaw) * o_target_x + np.cos(target_yaw) * o_target_y
 
-        target_x = np.cos(yaw) * o_target_x - np.sin(yaw) * o_target_y
-        target_y = np.sin(yaw) * o_target_x + np.cos(yaw) * o_target_y
+        #target_x = np.cos(yaw) * o_target_x - np.sin(yaw) * o_target_y
+        #target_y = np.sin(yaw) * o_target_x + np.cos(yaw) * o_target_y
 
     
         
@@ -190,10 +251,10 @@ def tricopter_flight_controller():
 
 
 
-        target_z = -i
-        target_x = np.sin(4*np.pi/30 * i)
-        target_y = 2*np.sin(8*np.pi/30 * i)
-        target_yaw = np.sin(8*np.pi/30 * i)
+        #target_z = -i
+        #o_target_x = np.sin(4*np.pi/30 * i)
+        #o_target_y = 2*np.sin(8*np.pi/30 * i)
+        #target_yaw = np.sin(np.pi/30 * i)/4
 
         z_error = (target_z - z) + np.random.normal(0, 0.01)
         U_z = trans_control_z.calculate((z_error)) #- z_vel * 3
@@ -202,26 +263,38 @@ def tricopter_flight_controller():
         U_z -= drone.mass * drone.gravity  
 
     
-        
+        #target_x = np.cos(yaw) * o_target_x - np.sin(yaw) * o_target_y
+        #target_y = np.sin(yaw) * o_target_x + np.cos(yaw) * o_target_y
 
+        #x_error = (np.cos(yaw) * (o_target_x - x) - np.sin(yaw) * (o_target_y - y)) + np.random.normal(0, 0.01)
+        #y_error = (np.sin(yaw) * (o_target_x - x) + np.cos(yaw) * (o_target_y - y)) + np.random.normal(0, 0.01)
+
+   
+        global_x_error = (o_target_x - x) + np.random.normal(0, 0.01)
+        global_y_error = (o_target_y - y) + np.random.normal(0, 0.01)
+
+        #local_x_error = np.cos(yaw) * global_x_error + np.sin(yaw) * global_y_error
+        #local_y_error = -np.sin(yaw) * global_x_error + np.cos(yaw) * global_y_error
 
         #print(f"yaw_vel: {yaw_vel}")
         #print(f"target_z: {target_z}")
         #print(stopped_spinning)
         #add some noise to the errors
-        x_error = (target_x - x) + np.random.normal(0, 0.01)
+        #x_error = (o_target_x - x) + np.random.normal(0, 0.01)
+        x_error = np.cos(yaw) * global_x_error + np.sin(yaw) * global_y_error
         #print(f"x_error: {x_error}")
         U_x = trans_control_x.calculate(x_error) #- x_vel * 0.1
 
-        pitch_error = U_x - pitch + np.random.normal(0, 0.01)
+        pitch_error = U_x - pitch + np.random.normal(0, 0.001)*np.pi/180
         U_pitch = rot_control_pitch.calculate(pitch_error) #- pitch_vel * 0.1
 
 
-        y_error = (target_y - y) + np.random.normal(0, 0.01)
+        #y_error = (target_y - y) + np.random.normal(0, 0.01)
+        y_error = -np.sin(yaw) * global_x_error + np.cos(yaw) * global_y_error
         #print(f"y_error: {y_error}")
         U_y = trans_control_y.calculate(y_error) #- y_vel * 0.1
 
-        roll_error = U_y - roll + np.random.normal(0, 0.01)
+        roll_error = U_y - roll + np.random.normal(0, 0.001)*np.pi/180
         U_roll = rot_control_roll.calculate(roll_error) #- roll_vel * 0.1
 
 
@@ -229,7 +302,7 @@ def tricopter_flight_controller():
 
 
 
-        yaw_error = target_yaw - yaw + np.random.normal(0, 0.01)*np.pi/180
+        yaw_error = target_yaw - yaw #+ np.random.normal(0, 0.001)*np.pi/180
         U_yaw = rot_control_yaw.calculate(yaw_error)
 
     
@@ -340,7 +413,24 @@ def tricopter_flight_controller():
         omega_1_result.append([omega_1,i])
         omega_2_result.append([omega_2,i])
         omega_3_result.append([omega_3,i])
-        alpha_result.append([alpha*180/np.pi -180,i])
+        #alpha = alpha*-1 - np.pi
+
+        
+
+        alpha *= 180/np.pi
+        #alpha -= 180
+
+
+        #if alpha is greater than 100 print the alpha terms
+
+        print(f"alpha: {alpha} alpha_term1: {alpha_term1} alpha_term2: {alpha_term2}")
+
+
+
+        #alpha_result.append([quaternion_rotation(alpha, servo_alpha),i])
+        alpha_result.append([alpha,i])
+
+        prev_alpha = alpha
 
         x_result.append([x,i])
         y_result.append([y,i])
@@ -369,7 +459,14 @@ def tricopter_flight_controller():
         
         i += dt
 
-    #save the errors to sim.csv
+
+    
+
+    print(np.arctan2(0.023646546623838926 ,1869.8372443053245))
+    print(np.arctan2(0.023646546623838926 ,-1869.8372443053245))
+    print(np.arctan2(-0.023646546623838926 ,1869.8372443053245))
+    print(np.arctan2(-0.023646546623838926 ,-1869.8372443053245))
+
     df = pd.DataFrame(pos_result, columns = ['pos', 'time'])
     df.to_csv('sim.csv', index=False)
     """ #plot u_roll_result
@@ -463,7 +560,7 @@ def tricopter_flight_controller():
     plt.show()
 
     #run the emil_sim.py
-    import emil_sim
+    #import emil_sim
     
     return
 
@@ -474,23 +571,34 @@ def plant(u1,u2,t):
 
     drone = Quadcopter(0.25, 0.25, 9.81, 0.02)
 
+    #trans_control_x = PIDController(0.2, 0.01, 0.2, dt)
+    trans_control_x = PIDController(0.1965757725903785, 0.010342614229023009, 0.2051560043445344, dt)
+
+    #rot_control_pitch = PIDController(0.3, 0, 1.2, dt)
+    rot_control_pitch = PIDController(0.30164029571075623, 0.000128899544963653, 1.1998256078947662, dt)
 
 
-    control_z = PIDController(0.9545651916204778,0.04441356161831689,4.0843239598328)
+    #trans_control_y = PIDController(0.2, 0.01, 0.2)
+    trans_control_y = u1
+
+    #rot_control_roll = PIDController(0.5, 0, 1.2)
+    rot_control_roll = u2
+
+    #trans_control_z = PIDController(0.9545651916204778,0.04441356161831689,4.0843239598328)
+    trans_control_z = PIDController(0.9945873259566484, 0.04333792067287307, 4.150268773767612)
+
+    #rot_control_yaw = PIDController(0.08508958604791192, 0.00923672770996732, 0.4286804507510326)
+    rot_control_yaw = PIDController(0.08935726607591638, 0.009453101478065287, 0.41156854675899196, dt)
 
 
-    trans_control_y = PIDController(0.2, 0.01, 0.2)
-    rot_control_roll = PIDController(0.5, 0, 1.2)
-
-    trans_control_x = PIDController(0.2, 0.01, 0.2)
-    rot_control_pitch = PIDController(0.3, 0, 1.2)
+ 
     
     target_x = 1
     target_y = 1
     target_z = -1
     target_roll = 0
     target_pitch = 0
-    target_yaw = 1*np.pi/180
+    target_yaw = 0#10*np.pi/180
     
 
     x = 0
@@ -529,29 +637,52 @@ def plant(u1,u2,t):
     for i in t:
         #Position error
 
-        x_error = (target_x - x)
-        U_x = trans_control_x.calculate(x_error)
+        z_error = (target_z - z) + np.random.normal(0, 0.01)
+        U_z = trans_control_z.calculate((z_error)) #- z_vel * 3
+        #U_z -= z_vel * 3
 
-        pitch_error = U_x - pitch
-        U_pitch = rot_control_pitch.calculate(pitch_error)
+        U_z -= drone.mass * drone.gravity  
+
+    
+        #target_x = np.cos(yaw) * o_target_x - np.sin(yaw) * o_target_y
+        #target_y = np.sin(yaw) * o_target_x + np.cos(yaw) * o_target_y
+
+        #x_error = (np.cos(yaw) * (o_target_x - x) - np.sin(yaw) * (o_target_y - y)) + np.random.normal(0, 0.01)
+        #y_error = (np.sin(yaw) * (o_target_x - x) + np.cos(yaw) * (o_target_y - y)) + np.random.normal(0, 0.01)
+
+   
+        global_x_error = (target_x - x) + np.random.normal(0, 0.01)
+        global_y_error = (target_y - y) + np.random.normal(0, 0.01)
+
+        #local_x_error = np.cos(yaw) * global_x_error + np.sin(yaw) * global_y_error
+        #local_y_error = -np.sin(yaw) * global_x_error + np.cos(yaw) * global_y_error
+
+        #print(f"yaw_vel: {yaw_vel}")
+        #print(f"target_z: {target_z}")
+        #print(stopped_spinning)
+        #add some noise to the errors
+        #x_error = (o_target_x - x) + np.random.normal(0, 0.01)
+        x_error = np.cos(yaw) * global_x_error + np.sin(yaw) * global_y_error
+        #print(f"x_error: {x_error}")
+        U_x = trans_control_x.calculate(x_error) #- x_vel * 0.1
+
+        pitch_error = U_x - pitch + np.random.normal(0, 0.01)*np.pi/180
+        U_pitch = rot_control_pitch.calculate(pitch_error) #- pitch_vel * 0.1
 
 
-        y_error = (target_y - y)
-        U_y = trans_control_y.calculate(y_error)
-        #U_y = 0
+        #y_error = (target_y - y) + np.random.normal(0, 0.01)
+        y_error = -np.sin(yaw) * global_x_error + np.cos(yaw) * global_y_error
+        #print(f"y_error: {y_error}")
+        U_y = trans_control_y.calculate(y_error) #- y_vel * 0.1
 
-        roll_error = U_y - roll
-        U_roll = rot_control_roll.calculate(roll_error)
+        roll_error = U_y - roll + np.random.normal(0, 0.01)*np.pi/180
+        U_roll = rot_control_roll.calculate(roll_error) #- roll_vel * 0.1
 
-        #U_roll = 0
 
-        yaw_error = target_yaw - yaw
-        U_yaw = u1.calculate(yaw_error)
+        yaw_error = target_yaw - yaw + np.random.normal(0, 0.01)*np.pi/180
+        U_yaw = rot_control_yaw.calculate(yaw_error)
 
-        z_error = (target_z - z)
-        U_z = control_z.calculate((z_error)) 
-        U_z -= drone.mass * drone.gravity
-
+   
 
         term1_12 = (2 * drone.l_0 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2))
         term2_12 = (2 * U_roll) / (drone.l_1 * drone.k_t)
@@ -628,21 +759,21 @@ def plant(u1,u2,t):
   
  
 
-        x_result.append([x])
-        y_result.append([y])
-        z_result.append([z])
+        x_result.append([x_error])
+        y_result.append([y_error])
+        z_result.append([z_error])
 
-        roll_result.append([roll*180/np.pi])
-        pitch_result.append([pitch*180/np.pi])
-        yaw_result.append([yaw*180/np.pi])
+        roll_result.append([roll_error*180/np.pi])
+        pitch_result.append([pitch_error*180/np.pi])
+        yaw_result.append([yaw_error*180/np.pi])
 
 
     #return roll_result as vector
-    return np.array(yaw_result)
+    return np.array(y_result)
 
         
 
-def pid_autotune(simulate_system, controller, initial_guess, time):
+def pid_autotune(simulate_system, initial_guess, time):
     # Simulate system
     t = np.linspace(0, time, num=1000)  # Adjust as needed
     #y_desired = np.ones_like(t)  # Desired response, assuming step input
@@ -650,7 +781,8 @@ def pid_autotune(simulate_system, controller, initial_guess, time):
     
     # Define cost function
     def cost_function(params):
-        controller.kp, controller.ki, controller.kd = params
+        kp, ki, kd = params
+        controller = PIDController(kp, ki, kd, dt)
         y_actual = simulate_system(controller, t)
         #print(f"y_actual: {y_actual[10]}, y_desired: {y_desired[10]}")
         return np.sum(np.square(y_actual - y_desired))
@@ -689,9 +821,9 @@ def pid_autotune2(simulate_system, initial_guess, time):
     
 
 def test(u1):
-
+    controller = PIDController(*u1)
     t = np.linspace(0, 10, num=1000)
-    y_actual = plant(u1,t)
+    y_actual = plant(controller,t)
     #plot the result
     plt.plot(t, y_actual)
     plt.show()
@@ -707,63 +839,30 @@ def test2(params):
 
 
 
-def test3():
-    target_roll_rad = 1
-    actual_roll_rad = 0
-
-    target_pitch_rad = 1
-    actual_pitch_rad = 0
-
-    target_yaw_rad = 1
-    actual_yaw_rad = 0
-
-    # Convert Euler angles to rotation matrices
-    target_rotation = SO3.RPY(target_roll_rad, target_pitch_rad, target_yaw_rad)
-    actual_rotation = SO3.RPY(actual_roll_rad, actual_pitch_rad, actual_yaw_rad) 
-
-    # Convert rotation matrices to quaternions
-    target_quat = UnitQuaternion(target_rotation)
-    actual_quat = UnitQuaternion(actual_rotation)
-    
-    # Compute the error quaternion
-    error_quat = target_quat.inv() * actual_quat
-
-    # convert error_quat to radians
-    error_rpy = error_quat.rpy()
-
-    print(f"error_rpy: {error_rpy}")
-
-   
-
-    print(f"error_rpy: {error_quat}")
-
-    
-    
-
-
-
-    
- 
-
 
 if __name__ == "__main__":
 
-    """ initial_guess = [0.00011056855858392918, 0, 0.00127068547473603857, 0, 0, 0]
-    controller = PIDController(*initial_guess)
+    """ initial_guess = [0.2, 0.01, 0.2, 0.5, 0, 1.2]
+    #initial_guess = [0.08508958604791192, 0.00923672770996732, 0.4286804507510326]
+    #controller = PIDController(*initial_guess)
     tuned_params = pid_autotune2(plant,initial_guess, time=100.0)
     tuned_kp1, tuned_ki1, tuned_kd1, tuned_kp2, tuned_ki2, tuned_kd2 = tuned_params
     #tuned_kp1, tuned_ki1, tuned_kd1 = tuned_params
     print(f"Tuned PID parameters1: Kp={tuned_kp1}, Ki={tuned_ki1}, Kd={tuned_kd1}")
     print(f"Tuned PID parameters2: Kp={tuned_kp2}, Ki={tuned_ki2}, Kd={tuned_kd2}")
+
     test2(tuned_params)
+    #test(tuned_params)
+
     #save the parameters to a .txt file
     file = open("pid_params.txt", "w")
-    file.write(f"Tuned PID parameters1: {tuned_kp1}, {tuned_ki1}, {tuned_kd1}") """
-    #file.write(f"Tuned PID parameters2: {tuned_kp2}, {tuned_ki2}, {tuned_kd2}")
+    file.write(f"Tuned PID parameters1: {tuned_kp1}, {tuned_ki1}, {tuned_kd1}")
+    #file.write(f"Tuned PID parameters2: {tuned_kp2}, {tuned_ki2}, {tuned_kd2}") """
 
-    #test(PIDController(0.09117824183681283, 0.0109722222222222219, 0.11132686783049586))
+    """ values = [0.08935726607591638, 0.009453101478065287, 0.41156854675899196]
+    test(values) """
 
-    #test2([0.2, 0.01, 0.2, 0.5, 0, 1.2])
+    #test2([0.1965757725903785, 0.010342614229023009, 0.2051560043445344, 0.5, 0, 1.2])
 
 
     tricopter_flight_controller()

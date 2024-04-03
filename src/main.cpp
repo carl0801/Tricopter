@@ -80,15 +80,13 @@ void processCommand(const char command) {
 FlightController flightController(STEP_TIME);
 
 void updateMotor(motorData moterValues) {
-  //map the values to the correct of range 0-180 from 0-2500
-  moterValues.omega_1 = map(moterValues.omega_1, 0, 4000, 0, 100);
-  moterValues.omega_2 = map(moterValues.omega_2, 0, 4000, 0, 100);
-  moterValues.omega_3 = map(moterValues.omega_3, 0, 4000, 0, 100);
   
-  //make sure the value is max 100
-  moterValues.omega_1 = std::min(moterValues.omega_1, 100.0);
-  moterValues.omega_2 = std::min(moterValues.omega_2, 100.0);
-  moterValues.omega_3 = std::min(moterValues.omega_3, 100.0);
+  //make sure the value is max 180
+  moterValues.omega_1 = std::min(moterValues.omega_1 / 7500 * 180, 180.0);
+  moterValues.omega_2 = std::min(moterValues.omega_2 / 7500 * 180, 180.0);
+  moterValues.omega_3 = std::min(moterValues.omega_3 / 7500 * 180, 180.0);
+
+
 
   esc1.write(moterValues.omega_1);
   esc2.write(moterValues.omega_2);

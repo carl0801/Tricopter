@@ -7,8 +7,8 @@ const FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
 const FusionVector accelerometerOffset = {0.03f, 0.0f, -0.005f};
-const FusionMatrix softIronMatrix = {0.976147, -0.0253269, 0.0608595, -0.0253269, 0.942362, 0.0598571, 0.0608595, 0.0598571, 0.843986}; 
-const FusionVector hardIronOffset = {-8.04849, -33.9675, 23.6392}; 
+const FusionMatrix softIronMatrix = {0.970484, -0.0013793, 0.0404112, -0.0013793, 0.98968, 0.0134713, 0.0404112, 0.0134713, 0.93159}; 
+const FusionVector hardIronOffset = {-113.612, 0.10103, 24.6554};
 
 
 // Initialise algorithms

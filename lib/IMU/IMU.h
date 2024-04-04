@@ -4,13 +4,13 @@
 #include "Fusion.h"
 #include "MPU9250.h"
 
-#define SAMPLE_RATE (2000) // Hz
+#define SAMPLE_RATE (1000) // Hz
 #define GRAVITY 9.81f // m/s^2
 
 
 #define MPU9250_ADDRESS 0x69 // Device address when AD0 pin is connected to pin 2
 
-//#define VL53L0X_ADDRESS 0x29 // Device address
+#define VL53L0X_CONNECT true// Device address
 
 
 #ifdef MPU9250_ADDRESS
@@ -20,7 +20,7 @@
 
 #endif //MPU9250_ADDRESS 
 
-#ifdef VL53L0X_ADDRESS
+#ifdef VL53L0X_CONNECT
 
     #include "VL53L0X.h"
 
@@ -33,35 +33,33 @@ class IMU {
         void read_sensors();
 
         // Variables
-        double time_now;
-        double time_former;
-        double deltat;
+        float time_now;
+        float time_former;
+        float deltat;
 
         // Sensor variables
-        double accel[3]; 
-        double magnetom[3];
-        double gyro[3];
-
-        double yaw_offset = (2.61f - M_PI_2);
+        float accel[3]; 
+        float magnetom[3];
+        float gyro[3];
 
         // Data variables
-        double euler_rad[3];
-        double quaternians[4];
+        float euler_rad[3];
+        float quaternians[4];
         double position[3];
 
 
 
     public:
         // Functions
-        void init_IMU();
+        void init();
         void update_IMU();
-        void sendToPC(double* data1, double* data2, double*);
+        void sendToPC(float* data1, float* data2, float* data3, float* data4, float* data5);
 
         // get data functions
-        void getEulerRad(double* roll, double* pitch, double* yaw);
-        void getQuaternians(double* w, double* x, double* y, double* z);
-        void getPosition(double* x, double* y, double* z);
-        void getAltitude(double* altitude);
+        void getEulerRad(float* roll, float* pitch, float* yaw);
+        void getQuaternians(float* w, float* x, float* y, float* z);
+        void getPosition(float* x, float* y, float* z);
+        void getLidarData(float* data1, float* data2);
 
         
 };

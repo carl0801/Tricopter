@@ -53,7 +53,7 @@ drone_id = p.createMultiBody(baseMass=1,
 # Set up camera position and orientation
 camera_target_position = [0, 0, 0]
 camera_distance = 10
-camera_yaw = 90
+camera_yaw = 45
 camera_pitch = -45#-90
 camera_roll = 0
 up_axis_index = 2

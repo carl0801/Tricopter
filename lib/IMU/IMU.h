@@ -45,7 +45,7 @@ class IMU {
         // Data variables
         float euler_rad[3];
         float quaternians[4];
-        double position[3];
+        float position[3];
 
 
 

@@ -27,14 +27,16 @@ previous_error_x = 0.0
 previous_error_y = 0.0
 previous_error_alti = 0.0  # Previous error for altitude control
 kp = 0.08
-kp_2 = 0.08
-ki = 0.00
+
+kp_2 = 0.08 #roll and pitch
+ki = 0.00   #roll and pitch
 ki_alti = 0.02#0.01  # Ki for altitude control
 kd = 0.04
+
 kd_alti = 1  # Kd for altitude control
 target_roll = 0.0
 target_pitch = 0.0
-target_altitude = 2.0
+target_altitude = 3.0
 output1 = 0.0
 output2 = 0.0
 output3 = 0.0

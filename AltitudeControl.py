@@ -35,9 +35,6 @@ kd_alti = 1  # Kd for altitude control
 target_roll = 0.0
 target_pitch = 0.0
 target_altitude = 2.0
-target_x = 1.0
-target_y = 0.0
-
 output1 = 0.0
 output2 = 0.0
 output3 = 0.0
@@ -62,22 +59,7 @@ for jointIndex in range(num_joints):
 # create data array
 data = []
 
-position_lim = 0.01
-position_correction = 0.05
-kp_position_x = 0.06
-ki_position_x = 0.001
-kd_position_x = 0.001
-kp_position_y = 0.01
-ki_position_y = 0.00
-kd_position_y = 0.0
-
-# Initialize variables for position control
-integral_position_x = 0.0
-integral_position_y = 0.0
-previous_error_position_x = 0.0
-previous_error_position_y = 0.0
-
-offset_roll = 0.0
+# make the loop as a try, if the user stops the simulation, the data will be saved
 
 # Run simulation continuously
 try:
@@ -86,35 +68,11 @@ try:
         pos, orn = p.getBasePositionAndOrientation(drone_id)
         roll, pitch, yaw = p.getEulerFromQuaternion(orn)
         #print("roll:", roll, "pitch:", pitch, "yaw:", yaw)
-
         # Calculate errors
-        error_x = target_x - pos[0]
-        error_y = target_y - pos[1]
-
-        # Update integral terms
-        integral_position_x += error_x * time_step
-        integral_position_y += error_y * time_step
-
-        # Update derivative terms
-        derivative_position_x = (error_x - previous_error_position_x) / time_step
-        derivative_position_y = (error_y - previous_error_position_y) / time_step
-
-        if error_y < 0:
-            # means that the actual position is positive
-            offset_roll = 0.09
-        else:
-            offset_roll = 0.0
-
-        # Calculate control inputs
-        target_roll = kp_position_y * error_y + ki_position_y * integral_position_y - offset_roll + kd_position_y * derivative_position_y
-        target_pitch = -kp_position_x * error_x - ki_position_x * integral_position_x - kd_position_x * derivative_position_x
-        print("target_roll:", target_roll, "target_pitch:", target_pitch)
-        
-
         error_orientation_x = target_roll - roll
         error_orientation_y = target_pitch - pitch
         error_altitude = target_altitude - pos[2]  # Altitude error
-        
+
         # Update integral terms
         integral_x += error_orientation_x * time_step
         integral_y += error_orientation_y * time_step
@@ -144,8 +102,8 @@ try:
         # Apply external force based on control inputs
         motor_forces = [output1, output2, output3]  # Assuming 3 motors
 
-        #print("Motor forces:")
-        #print(motor_forces)
+        print("Motor forces:")
+        print(motor_forces)
         # Apply external force to each motor
         for jointIndex, force in zip(motor_joints, motor_forces):
             p.applyExternalForce(drone_id, jointIndex, [0, 0, force], [0, 0, 0], p.LINK_FRAME)
@@ -160,11 +118,7 @@ try:
         previous_error_x = error_orientation_x
         previous_error_y = error_orientation_y
         previous_error_alti = error_altitude
-        previous_error_position_x = error_x
-        previous_error_position_y = error_y
-
-
-        p.resetDebugVisualizerCamera(1.5, 90.0, -40, pos)
+        p.resetDebugVisualizerCamera(2.0, 90.0, -10, pos)
 
         # Optionally, you can add a delay to visualize the simulation
         p.stepSimulation()

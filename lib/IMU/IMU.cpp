@@ -7,8 +7,8 @@ const FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
 const FusionVector accelerometerOffset = {0.03f, 0.0f, -0.005f};
-const FusionMatrix softIronMatrix = {0.929729, -0.00859594, -0.0070703, -0.00859594, 0.987421, -0.00911484, -0.0070703, -0.00911484, 0.993384};
-const FusionVector hardIronOffset = {5.76039, -12.441, 12.208};
+const FusionMatrix softIronMatrix = {0.950194, -0.023079, 0.0223308, -0.023079, 0.977227, -0.0143745, 0.0223308, -0.0143745, 0.939388}; //{0.970484, -0.0013793, 0.0404112, -0.0013793, 0.98968, 0.0134713, 0.0404112, 0.0134713, 0.93159}; 
+const FusionVector hardIronOffset = {-94.6133, -5.1279, 20.4048};//{-113.612, 0.10103, 24.6554};
 
 
 // Initialise algorithms
@@ -17,9 +17,15 @@ FusionAhrs ahrs;
 
 MPU9250 MPU(Wire, MPU9250_ADDRESS);
 
-#ifdef VL53L0X_ADDRESS
 
-  VL53L0X lidar;
+#ifdef VL53L0X_CONNECT
+  // The number of sensors in your system.
+  const uint8_t sensorCount = 2;
+
+  // The Arduino pin connected to the XSHUT pin of each sensor.
+  const uint8_t xshutPins[sensorCount] = { 4, 15, };
+
+  VL53L0X sensors[sensorCount];
 
 #endif //VL53L0X_ADDRESS
 
@@ -41,16 +47,20 @@ void IMU::read_sensors() {
 }
 
 // Send data to PC
-void IMU::sendToPC(double* data1, double* data2, double* data3)
+void IMU::sendToPC(float* data1, float* data2, float* data3, float* data4, float* data5)
 { 
 
   byte* byteData1 = (byte*)(data1);
   byte* byteData2 = (byte*)(data2);
   byte* byteData3 = (byte*)(data3);
-  byte buf[12] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
+  byte* byteData4 = (byte*)(data4);
+  byte* byteData5 = (byte*)(data5);
+  byte buf[20] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
                  byteData2[0], byteData2[1], byteData2[2], byteData2[3],
-                 byteData3[0], byteData3[1], byteData3[2], byteData3[3]};
-  Serial.write(buf, 12);
+                 byteData3[0], byteData3[1], byteData3[2], byteData3[3],
+                 byteData4[0], byteData4[1], byteData4[2], byteData4[3],
+                 byteData5[0], byteData5[1], byteData5[2], byteData5[3]};
+  Serial.write(buf, 20);
 }
 
 // Update the IMU
@@ -61,12 +71,12 @@ void IMU::update_IMU() {
 
   // Calculate time since last loop
   time_now = micros();
-  deltat = (double)(time_now - time_former) / 1000000.0f;
+  deltat = (float)(time_now - time_former) / 1000000.0f;
   time_former = time_now;
   
-  FusionVector gyroscope = {gyro[0], gyro[1], -gyro[2]};  
-  FusionVector accelerometer = {-accel[0], -accel[1], accel[2]}; 
-  FusionVector magnetometer = {magnetom[1], magnetom[0], -magnetom[2]};
+  FusionVector gyroscope = {gyro[0], gyro[1], gyro[2]};  
+  FusionVector accelerometer = {accel[0], accel[1], accel[2]}; 
+  FusionVector magnetometer = {magnetom[0], magnetom[1], magnetom[2]};
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
@@ -81,18 +91,22 @@ void IMU::update_IMU() {
 
   // Print algorithm outputs
   const FusionQuaternion quaternion = FusionAhrsGetQuaternion(&ahrs);
+
+  // Get Euler angles (Z-Y-X convention)
   const FusionEuler euler = FusionQuaternionToEuler(quaternion);
+
+  // Get Earth acceleration
   const FusionVector earth = FusionAhrsGetEarthAcceleration(&ahrs);
 
-  // Update position
+  // Update position every 100 iterations
   position[0] = earth.axis.x * GRAVITY;
   position[1] = earth.axis.y * GRAVITY;
-  position[2] = earth.axis.z * GRAVITY;
-
+  position[2] = earth.axis.z * GRAVITY + 0.44f;
+  
   // Update euler angles
-  euler_rad[0] = (euler.angle.roll * DEG_TO_RAD) ;
-  euler_rad[1] = (euler.angle.pitch * DEG_TO_RAD) ;
-  euler_rad[2] = (euler.angle.yaw * DEG_TO_RAD) - yaw_offset;
+  euler_rad[0] = (euler.angle.roll * DEG_TO_RAD);
+  euler_rad[1] = (euler.angle.pitch * DEG_TO_RAD);
+  euler_rad[2] = (euler.angle.yaw * DEG_TO_RAD) - (4.2f * DEG_TO_RAD);
 
   // Update quaternion
   quaternians[0] = quaternion.element.w;
@@ -100,12 +114,14 @@ void IMU::update_IMU() {
   quaternians[2] = quaternion.element.y;
   quaternians[3] = quaternion.element.z;
 
+  //printf("mx: %f, my: %f, mz: %f\n", magnetometer.axis.x, magnetometer.axis.y, magnetometer.axis.z);
+
   // Delay to maintain sample rate
   delayMicroseconds(1/SAMPLE_RATE * 1000000);
 }
 
 // initialise the IMU
-void IMU::init_IMU() {
+void IMU::init() {
   pinMode(2, OUTPUT);
   digitalWrite(2, HIGH);
 
@@ -121,12 +137,48 @@ void IMU::init_IMU() {
   MPU.setSrd(9);
   time_former = micros();
 
+  #ifdef VL53L0X_CONNECT
+
+    // Disable/reset all sensors by driving their XSHUT pins low.
+    for (uint8_t i = 0; i < sensorCount; i++)
+    {
+      pinMode(xshutPins[i], OUTPUT);
+      digitalWrite(xshutPins[i], LOW);
+    }
+
+    // Enable, initialize, and start each sensor, one by one.
+    for (uint8_t i = 0; i < sensorCount; i++)
+    {
+      // Stop driving this sensor's XSHUT low. This should allow the carrier
+      // board to pull it high. (We do NOT want to drive XSHUT high since it is
+      // not level shifted.) Then wait a bit for the sensor to start up.
+      pinMode(xshutPins[i], INPUT);
+      delay(10);
+
+      sensors[i].setTimeout(500);
+      if (!sensors[i].init())
+      {
+        Serial.print("Failed to detect and initialize sensor ");
+        Serial.println(i);
+        while (1);
+      }
+
+      // Each sensor must have its address changed to a unique value other than
+      // the default of 0x29 (except for the last one, which could be left at
+      // the default). To make it simple, we'll just count up from 0x2A.
+      sensors[i].setAddress(0x2A + i);
+
+      sensors[i].startContinuous(50);
+    }
+
+  #endif //VL53L0X_ADDRESS
+
   FusionOffsetInitialise(&offset, SAMPLE_RATE);
   FusionAhrsInitialise(&ahrs);
 
   // Set AHRS algorithm settings
   const FusionAhrsSettings settings = {
-          .convention = FusionConventionNed, //Change this to FusionConventionNwu if turn 180 degrees
+          .convention = FusionConventionNed,
           .gain = 0.7f,
           .gyroscopeRange = 500.0f, /* replace this with actual gyroscope range in degrees/s */
           .accelerationRejection = 10.0f,
@@ -135,31 +187,17 @@ void IMU::init_IMU() {
   };
   FusionAhrsSetSettings(&ahrs, &settings);
 
-  #ifdef VL53L0X_ADDRESS
-
-    Wire.begin();
-
-    lidar.setTimeout(500);
-    if (!lidar.init())
-    {
-      Serial.println("Failed to detect and initialize sensor!");
-      while (1) {}
-    }
-    lidar.startContinuous();
-
-  #endif //VL53L0X_ADDRESS
-
 }
 
 // Get euler angles
-void IMU::getEulerRad(double* roll, double* pitch, double* yaw) {
+void IMU::getEulerRad(float* roll, float* pitch, float* yaw) {
   *roll = euler_rad[0];
   *pitch = euler_rad[1];
   *yaw = euler_rad[2];
 }
 
 // Get quaternians
-void IMU::getQuaternians(double* w, double* x, double* y, double* z) {
+void IMU::getQuaternians(float* w, float* x, float* y, float* z) {
   *w = quaternians[0];
   *x = quaternians[1];
   *y = quaternians[2];
@@ -167,40 +205,18 @@ void IMU::getQuaternians(double* w, double* x, double* y, double* z) {
 }
 
 // Get position
-void IMU::getPosition(double* x, double* y, double* z) {
+void IMU::getEarthAcceleration(float* x, float* y, float* z) {
   *x = position[0];
   *y = position[1];
   *z = position[2];
 }
 
-//Get alttitude from ToF sensor
-void IMU::getAltitude(double* altitude) {
-  #if defined(VL53L0X_ADDRESS)
-    *altitude = lidar.readRangeContinuousMillimeters();
-  #else
-    *altitude = 0;
+// get lidar data
+void IMU::getLidarData(float* data1, float* data2) {
+  #ifdef VL53L0X_CONNECT
+
+    *data1 = sensors[0].readRangeContinuousMillimeters();
+    *data2 = sensors[1].readRangeContinuousMillimeters();
+
   #endif //VL53L0X_ADDRESS
-
-};
-
-
-
-/* Get the pressure from the BMP085 (Pa)
-void IMU::getPressure(double *pressure) {
-  #if defined(HW_290_ADDRESS) 
-    *pressure = bmp.readPressure();
-  #else
-    *pressure = 0;
-
-  #endif //HW_290_ADDRESS
-
 }
-
-// Get the temperature from the BMP085 (C°)
-void IMU::getTemperature(double *temperature) {
-  #if defined(HW_290_ADDRESS) 
-    *temperature = bmp.readTemperature();
-  #else
-    *temperature = 0;
-  #endif //HW_290_ADDRESS
-}*/

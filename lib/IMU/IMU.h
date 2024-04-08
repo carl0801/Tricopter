@@ -10,7 +10,7 @@
 
 #define MPU9250_ADDRESS 0x69 // Device address when AD0 pin is connected to pin 2
 
-#define VL53L0X_CONNECT true// Device address
+//#define VL53L0X_CONNECT true// Device address
 
 
 #ifdef MPU9250_ADDRESS
@@ -58,7 +58,7 @@ class IMU {
         // get data functions
         void getEulerRad(float* roll, float* pitch, float* yaw);
         void getQuaternians(float* w, float* x, float* y, float* z);
-        void getPosition(float* x, float* y, float* z);
+        void getEarthAcceleration(float* x, float* y, float* z);
         void getLidarData(float* data1, float* data2);
 
         

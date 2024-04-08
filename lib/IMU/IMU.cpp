@@ -7,8 +7,8 @@ const FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
 const FusionVector accelerometerOffset = {0.03f, 0.0f, -0.005f};
-const FusionMatrix softIronMatrix = {0.970484, -0.0013793, 0.0404112, -0.0013793, 0.98968, 0.0134713, 0.0404112, 0.0134713, 0.93159}; 
-const FusionVector hardIronOffset = {-113.612, 0.10103, 24.6554};
+const FusionMatrix softIronMatrix = {0.950194, -0.023079, 0.0223308, -0.023079, 0.977227, -0.0143745, 0.0223308, -0.0143745, 0.939388}; //{0.970484, -0.0013793, 0.0404112, -0.0013793, 0.98968, 0.0134713, 0.0404112, 0.0134713, 0.93159}; 
+const FusionVector hardIronOffset = {-94.6133, -5.1279, 20.4048};//{-113.612, 0.10103, 24.6554};
 
 
 // Initialise algorithms
@@ -16,6 +16,7 @@ FusionOffset offset;
 FusionAhrs ahrs;
 
 MPU9250 MPU(Wire, MPU9250_ADDRESS);
+
 
 #ifdef VL53L0X_CONNECT
   // The number of sensors in your system.
@@ -97,11 +98,11 @@ void IMU::update_IMU() {
   // Get Earth acceleration
   const FusionVector earth = FusionAhrsGetEarthAcceleration(&ahrs);
 
-  // Update position
+  // Update position every 100 iterations
   position[0] = earth.axis.x * GRAVITY;
   position[1] = earth.axis.y * GRAVITY;
-  position[2] = earth.axis.z * GRAVITY;
-
+  position[2] = earth.axis.z * GRAVITY + 0.44f;
+  
   // Update euler angles
   euler_rad[0] = (euler.angle.roll * DEG_TO_RAD);
   euler_rad[1] = (euler.angle.pitch * DEG_TO_RAD);
@@ -204,7 +205,7 @@ void IMU::getQuaternians(float* w, float* x, float* y, float* z) {
 }
 
 // Get position
-void IMU::getPosition(float* x, float* y, float* z) {
+void IMU::getEarthAcceleration(float* x, float* y, float* z) {
   *x = position[0];
   *y = position[1];
   *z = position[2];

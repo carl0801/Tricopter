@@ -51,12 +51,12 @@ double PIDController::calculate(double error) {
 }
 
 FlightController::FlightController(double dt) : dt(dt),
-    TransControlX(0.1965757725903785, 0.010342614229023009, 0.2051560043445344, dt),
-    TransControlY(0.21248410411380658, 0.12152492457843977, 0.32629781318334894, dt),
-    TransControlZ(0.9945873259566484, 0.04333792067287307, 4.150268773767612, dt),
-    RotControlZ(0.08935726607591638, 0.009453101478065287, 0.41156854675899196, dt),
-    RotControlX(0.27778911515638605, -0.017256089514188208, 0.8259220175587367, dt),
-    RotControlY(0.30164029571075623, 0.000128899544963653, 1.1998256078947662, dt),
+    TransControlX(14.210199629344466, 2.743663460977311e-05, 0.6550344458063302, dt),
+    TransControlY(-11.61166369003271, 3.1138720119081666, 21.95303938004841, dt),
+    TransControlZ(4,0.0,1, dt),
+    RotControlZ(0.08954740703540659, 0.009507839547302766, 0.411545168858215, dt),
+    RotControlX(-0.0027784102834362123, 0.01739939755233525, 0.009438289952790207, dt),
+    RotControlY(3.9177422768315404, 6.673890880922391, 0.9802682375214986, dt),
     drone(0.25, 0.25, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0000008, 0.0000003),
     target_x(0),
     target_y(0),
@@ -122,20 +122,20 @@ motorData FlightController::calculate() {
 
 
 
-    term1_12 = (2 * drone.l_0 * U_Z) / (drone.k_t * (drone.l_0 + drone.l_2));
-    term2_12 = (2 * U_r) / (drone.l_1 * drone.k_t);
-    term3_12 = (2 * U_p) / (drone.k_t * (drone.l_0 + drone.l_2));
+    term1_12 = (drone.l_0 * U_Z) / (2*drone.k_t * (drone.l_0 + drone.l_2));
+    term2_12 = (U_r) / (2*drone.l_1 * drone.k_t);
+    term3_12 = (U_p) / (2*drone.k_t * (drone.l_0 + drone.l_2));
     omega_1_mid = -term1_12 - term2_12 + term3_12; 
     omega_2_mid = -term1_12 + term2_12 + term3_12;
     Output.omega_1 = (omega_1_mid < 0) ? 0 : sqrt(omega_1_mid) / 2;
     Output.omega_2 = (omega_2_mid < 0) ? 0 : sqrt(omega_2_mid) / 2;
 
-    term1_3p1 = ((drone.l_2 * U_Z) / (drone.k_t * (drone.l_0 + drone.l_2)));
-    term1_3p2 = (U_p / (drone.k_t * (drone.l_0 + drone.l_2))) ;
+    term1_3p1 = -((drone.l_2 * U_Z) / (drone.k_t * (drone.l_0 + drone.l_2)));
+    term1_3p2 = -(U_p / (drone.k_t * (drone.l_0 + drone.l_2))) ;
     term1_3 = pow(-term1_3p1 - term1_3p2, 2);
 
 
-    term2_3p1 = ((drone.k_d * U_Z) / (drone.k_t * drone.k_t * drone.l_0)) ;
+    term2_3p1 = -((drone.k_d * U_Z) / (drone.k_t * drone.k_t * drone.l_0)) ;
     term2_3p2 = (U_y / (drone.l_0 * drone.k_t));
     term2_3 = pow(-term2_3p1 + term2_3p2, 2);
 
@@ -150,8 +150,8 @@ motorData FlightController::calculate() {
 
 
     alpha_term1 = -((drone.k_d * U_Z) / (drone.k_t * drone.k_t * drone.l_0) + U_y / (drone.l_0 * drone.k_t));
-    alpha_term2 = -(drone.l_2 * U_Z) / (drone.k_t * (drone.l_0 + drone.l_2)) - U_p / (drone.k_t * (drone.l_0 + drone.l_2));
-    Output.alpha = atan2(alpha_term1, alpha_term2);
+    alpha_term2 = (drone.l_2 * U_Z) / (drone.k_t * (drone.l_0 + drone.l_2)) - U_p / (drone.k_t * (drone.l_0 + drone.l_2));
+    Output.alpha = atan(alpha_term1 / alpha_term2);
 
     return Output;
 }

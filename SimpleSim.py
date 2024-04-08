@@ -3,6 +3,8 @@ import numpy as np
 import time
 import pybullet_data
 
+
+
 # Connect to PyBullet physics server
 p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())

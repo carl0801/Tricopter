@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <ESP32Servo.h>
 #include <ESP32PWM.h>
-
+#include <ArduinoEigen.h>
 
 
 
@@ -91,6 +91,8 @@ private:
     double roll;
     double pitch;
     double yaw;
+    float roll_f, pitch_f, yaw_f, z_f;
+    float lidar2;
 
     Eigen::Quaterniond q;
     

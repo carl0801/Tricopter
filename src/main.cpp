@@ -213,7 +213,7 @@ void setup() {
 
   Wire.begin();
 
-  imu.init_IMU();
+  imu.init();
 
 
   delay(1000);

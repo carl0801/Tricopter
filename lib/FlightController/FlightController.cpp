@@ -78,11 +78,15 @@ motorData FlightController::calculate() {
     //time the get rotation function
     unsigned long start = millis();
     //imu.getQuaternionRotation(&q);
-    imu.getEulerRad(&roll, &pitch, &yaw); 
+    imu.getEulerRad(&roll_f, &pitch_f, &yaw_f);
+    roll = static_cast<double>(roll_f);
+    pitch = static_cast<double>(pitch_f);
+    yaw = static_cast<double>(yaw_f);
     unsigned long end = millis();
     Serial.print("Time to get rotation: "); Serial.println(end - start);
     start = millis();
-    imu.getAltitude(&z);//get the current angle and altitude
+    imu.getLidarData(&z_f,&lidar2);//get the current angle and altitude
+    z = static_cast<double>(z_f);
     end = millis();
     Serial.print("Time to get altitude: "); Serial.println(end - start);
 

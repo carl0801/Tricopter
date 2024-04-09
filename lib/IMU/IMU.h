@@ -16,7 +16,7 @@
 #ifdef MPU9250_ADDRESS
 
     #include "MPU9250.h"
-    #define AD0_PIN 2 // AD0 pin is connected to pin 2
+    #define AD0_PIN 17 // AD0 pin is connected to pin 2
 
 #endif //MPU9250_ADDRESS 
 

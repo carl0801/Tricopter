@@ -20,10 +20,10 @@ MPU9250 MPU(Wire, MPU9250_ADDRESS);
 
 #ifdef VL53L0X_CONNECT
   // The number of sensors in your system.
-  const uint8_t sensorCount = 2;
+  const uint8_t sensorCount = 1;
 
   // The Arduino pin connected to the XSHUT pin of each sensor.
-  const uint8_t xshutPins[sensorCount] = { 4, 15, };
+  const uint8_t xshutPins[sensorCount] = { 4 };
 
   VL53L0X sensors[sensorCount];
 
@@ -117,8 +117,8 @@ void IMU::update_IMU() {
 
 // initialise the IMU
 void IMU::init() {
-  pinMode(2, OUTPUT);
-  digitalWrite(2, HIGH);
+  pinMode(AD0_PIN, OUTPUT);
+  digitalWrite(AD0_PIN, HIGH);
 
   MPU.begin();
 
@@ -211,7 +211,7 @@ void IMU::getLidarData(float* data1, float* data2) {
   #ifdef VL53L0X_CONNECT
 
     *data1 = sensors[0].readRangeContinuousMillimeters();
-    *data2 = sensors[1].readRangeContinuousMillimeters();
+    *data2 = 0;//sensors[1].readRangeContinuousMillimeters();
 
   #endif //VL53L0X_ADDRESS
 }

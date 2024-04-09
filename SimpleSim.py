@@ -66,12 +66,12 @@ data = []
 
 position_lim = 0.01
 position_correction = 0.05
-kp_position_x = 0.06
-ki_position_x = 0.001
-kd_position_x = 0.001
-kp_position_y = 0.01
+kp_position_x = 0.03
+ki_position_x = 0.000
+kd_position_x = 0.08
+kp_position_y = 0.005
 ki_position_y = 0.00
-kd_position_y = 0.0
+kd_position_y = 0.08
 
 # Initialize variables for position control
 integral_position_x = 0.0

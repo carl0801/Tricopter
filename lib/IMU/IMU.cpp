@@ -20,10 +20,10 @@ MPU9250 MPU(Wire, MPU9250_ADDRESS);
 
 #ifdef VL53L0X_CONNECT
   // The number of sensors in your system.
-  const uint8_t sensorCount = 2;
+  const uint8_t sensorCount = 1;
 
   // The Arduino pin connected to the XSHUT pin of each sensor.
-  const uint8_t xshutPins[sensorCount] = { 4, 15, };
+  const uint8_t xshutPins[sensorCount] = { 4 };
 
   VL53L0X sensors[sensorCount];
 
@@ -47,19 +47,14 @@ void IMU::read_sensors() {
 }
 
 // Send data to PC
-void IMU::sendToPC(float* data1, float* data2, float* data3, float* data4, float* data5)
-{ 
+void IMU::sendToPC(float* data1, float* data2, float* data3){ 
 
   byte* byteData1 = (byte*)(data1);
   byte* byteData2 = (byte*)(data2);
   byte* byteData3 = (byte*)(data3);
-  byte* byteData4 = (byte*)(data4);
-  byte* byteData5 = (byte*)(data5);
   byte buf[20] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
                  byteData2[0], byteData2[1], byteData2[2], byteData2[3],
-                 byteData3[0], byteData3[1], byteData3[2], byteData3[3],
-                 byteData4[0], byteData4[1], byteData4[2], byteData4[3],
-                 byteData5[0], byteData5[1], byteData5[2], byteData5[3]};
+                 byteData3[0], byteData3[1], byteData3[2], byteData3[3]};
   Serial.write(buf, 20);
 }
 
@@ -122,8 +117,8 @@ void IMU::update_IMU() {
 
 // initialise the IMU
 void IMU::init() {
-  pinMode(2, OUTPUT);
-  digitalWrite(2, HIGH);
+  pinMode(AD0_PIN, OUTPUT);
+  digitalWrite(AD0_PIN, HIGH);
 
   MPU.begin();
 
@@ -216,7 +211,7 @@ void IMU::getLidarData(float* data1, float* data2) {
   #ifdef VL53L0X_CONNECT
 
     *data1 = sensors[0].readRangeContinuousMillimeters();
-    *data2 = sensors[1].readRangeContinuousMillimeters();
+    *data2 = 0;//sensors[1].readRangeContinuousMillimeters();
 
   #endif //VL53L0X_ADDRESS
 }

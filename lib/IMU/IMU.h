@@ -16,7 +16,7 @@
 #ifdef MPU9250_ADDRESS
 
     #include "MPU9250.h"
-    #define AD0_PIN 2 // AD0 pin is connected to pin 2
+    #define AD0_PIN 17 // AD0 pin is connected to pin 2
 
 #endif //MPU9250_ADDRESS 
 
@@ -53,7 +53,7 @@ class IMU {
         // Functions
         void init();
         void update_IMU();
-        void sendToPC(float* data1, float* data2, float* data3, float* data4, float* data5);
+        void sendToPC(float* data1, float* data2, float* data3);
 
         // get data functions
         void getEulerRad(float* roll, float* pitch, float* yaw);

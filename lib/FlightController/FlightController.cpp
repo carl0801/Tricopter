@@ -16,8 +16,9 @@ void resetTargetAngle(double& yaw, double& x, double& y, double& z) {
 
 Tricopter::Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t, double k_d) :
     mass(mass), l_0(l_0), gravity(gravity), drag(drag), j_x(j_x), j_y(j_y), j_z(j_z), k_t(k_t), k_d(k_d) {
-        l_1 = sin(60 * M_PI / 180) * l_0;
-        l_2 = sin(-60 * M_PI / 180) * l_0;
+        //take the abs value of the sin function to get the length of the arms
+        l_1 = abs(sin(120 * M_PI / 180) * l_0);
+        l_2 = abs(sin(-60 * M_PI / 180) * l_0);
     }
 
 PIDController::PIDController(double kp, double ki, double kd, double dt, double max_integral, double derivative_filter) :
@@ -57,7 +58,7 @@ FlightController::FlightController(double dt) : dt(dt),
     RotControlZ(0.08954740703540659, 0.009507839547302766, 0.411545168858215, dt),
     RotControlX(-0.0027784102834362123, 0.01739939755233525, 0.009438289952790207, dt),
     RotControlY(3.9177422768315404, 6.673890880922391, 0.9802682375214986, dt),
-    drone(0.25, 0.25, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0000008, 0.0000003),
+    drone(0.3119363164318645, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 0.01, 0.0000001),
     target_x(0),
     target_y(0),
     target_z(0),
@@ -89,18 +90,6 @@ motorData FlightController::calculate() {
     z = static_cast<double>(z_f);
     end = millis();
     Serial.print("Time to get altitude: "); Serial.println(end - start);
-
-    //get the euler angles in radians from the quaternion using the Eigen library
-    //Eigen::Matrix3f rot = q.normalized().toRotationMatrix();
-    
-    //convert rotationmatrix to XYZ euler angles
-    //Eigen::Vector3d rpy = q.toRotationMatrix().eulerAngles(0, 1, 2);
-
-    //convert the target x from earth to drone frame
-    
-
-    
-
 
     z_error = target_z - z;
     U_Z = TransControlZ.calculate(z_error);

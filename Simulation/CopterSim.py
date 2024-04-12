@@ -76,7 +76,8 @@ class Quadcopter:
         self.k_t = k_t
         self.k_d = k_d
         self.l_1 = abs(np.sin(60 * np.pi / 180) * l_0)
-        self.l_2 = abs(np.sin(-60 * np.pi / 180) * l_0)
+        #self.l_2 = abs(np.sin(-60 * np.pi / 180) * l_0)
+        self.l_2 = np.cos(60 * np.pi / 180) * l_0
         #print(f"l_1: {self.l_1}, l_2: {self.l_2}")
 
 def opposite_angle(angle_deg):
@@ -734,23 +735,23 @@ def pid_autotune(simulate_system, initial_guess, time):
 def pid_autotune2(simulate_system, initial_guess, time):
     # Simulate system
     t = np.linspace(0, time, num=int(time/0.01))  # Adjust as needed
-    y_desired = np.zeros_like(t)  # Desired response, assuming step input
-    
+    y_desired = np.zeros((len(t), 3))  # Desired response, assuming step input
+
     # Define cost function
     def cost_function(params):
         kp1, ki1, kd1, kp2, ki2, kd2 = params
         
         # Create PID controllers with the given parameters
-        controller1 = PIDController(kp1, ki1, kd1)
-        controller2 = PIDController(kp2, ki2, kd2)
+        #controller1 = PIDController(kp1, ki1, kd1)
+        #controller2 = PIDController(kp2, ki2, kd2)
         
         # Simulate system with both controllers
-        y_actual = simulate_system(controller1, controller2, t, sim=True)
+        y_actual = simulate_system([kp1,ki1,kd1], [kp2, ki2, kd2], t, sim=True)
         #print mean squared error
         print(np.sum(np.square(y_actual - y_desired)))
-
-        # Compute the sum of squared errors
+        # Compute the sum of squared errors of the vectors
         return np.sum(np.square(y_actual - y_desired))
+        
 
     # Perform optimization
     result = minimize(cost_function, initial_guess, method='Nelder-Mead')
@@ -1133,6 +1134,37 @@ def tricopterSimPID(u1,u2,t):
     
     return y_result
 
+def quatError(qd,q):
+    # Compute the error quaternion as a quarternion
+    # the quat is in the form [x,y,z,w]
+    q_error = np.zeros(4)
+    q_error[0] = qd[3]*q[0] - qd[0]*q[3] - qd[1]*q[2] + qd[2]*q[1]
+    q_error[1] = qd[3]*q[1] + qd[0]*q[2] - qd[1]*q[3] - qd[2]*q[0]
+    q_error[2] = qd[3]*q[2] - qd[0]*q[1] + qd[1]*q[0] - qd[2]*q[3]
+    q_error[3] = qd[3]*q[3] + qd[0]*q[0] + qd[1]*q[1] + qd[2]*q[2]
+    
+
+
+
+    
+    return q_error
+
+def rpyToQuat(r,p,y):
+    # Convert roll, pitch, yaw to quaternion
+    cy = np.cos(y * 0.5)
+    sy = np.sin(y * 0.5)
+    cp = np.cos(p * 0.5)
+    sp = np.sin(p * 0.5)
+    cr = np.cos(r * 0.5)
+    sr = np.sin(r * 0.5)
+
+    q = np.zeros(4)
+    q[0] = cy * cp * cr + sy * sp * sr
+    q[1] = cy * cp * sr - sy * sp * cr
+    q[2] = sy * cp * sr + cy * sp * cr
+    q[3] = sy * cp * cr - cy * sp * sr
+
+    return q
 
 def tricopterSim(u1=None,u2=None,t=None,sim=False):
 
@@ -1159,6 +1191,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
     if not sim:
         trans_control_y =  PIDController(-11.61166369003271, 3.1138720119081666, 21.95303938004841, dt)
     else:
+        pass
         trans_control_y = u1
     
     #PIDController(14.210199629344466, 2.743663460977311e-05, 0.6550344458063302, dt)
@@ -1168,13 +1201,15 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
     if not sim:
         rot_control_roll = PIDController(-0.0027784102834362123, 0.01739939755233525, 0.009438289952790207, dt)
     else:
+        pass
         rot_control_roll = u2
     
 
     #trans_control_z = PIDController(1.0021720967289238, 0.04369073411746757, 4.1877918692437355)
     #trans_control_z = PIDController(0.01,0,0.1, dt)
 
-    trans_control_z = PIDController(4,0.0,1, dt)
+    #trans_control_z = PIDController(4,0.0,1, dt)
+    trans_control_z = PIDController(1.668368344396709,1.9999999872862848,-3.8590755659836185e-10, dt)
 
 
 
@@ -1235,7 +1270,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
 
     #print(p.getDynamicsInfo(droneId, -1))
     #calculate the inertia of the drone
-    total_inertia = [0, 0, 0]
+    """ total_inertia = [0, 0, 0]
     for i in range(-1, p.getNumJoints(droneId)):
         mass, lateral_friction, inertia, local_inertial_pos, local_inertial_orn, restitution, rolling_friction, spinning_friction, contact_damping, contact_stiffness, body_type, collision_margin = p.getDynamicsInfo(droneId, i)
         # Calculate the distance from the center of mass of the drone to the center of mass of the part
@@ -1244,7 +1279,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
         inertia_about_drone_com = [ii + mass * distance**2 for ii in inertia]
         # Add this to the total moment of inertia
         total_inertia = [ii + jj for ii, jj in zip(total_inertia, inertia_about_drone_com)]
-    #print(f"total_inertia {total_inertia}")
+    print(f"total_inertia {total_inertia}") """
     #exit()
 
 
@@ -1345,8 +1380,8 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
 
             U_z -= drone.mass * drone.gravity  
 
-            if U_z > 0:
-                U_z = 0
+            """ if U_z > 0:
+                U_z = 0 """
 
             
     
@@ -1364,7 +1399,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             U_pitch = rot_control_pitch.calculate(pitch_error) 
 
 
-            #y_error = (target_y - y) + np.random.normal(0, 0.01)
+            """ #y_error = (target_y - y) + np.random.normal(0, 0.01)
             y_error = -np.sin(yaw) * global_x_error + np.cos(yaw) * global_y_error
             #print(f"y_error: {y_error}")
             U_y = trans_control_y.calculate(y_error) #- y_vel * 0.1
@@ -1372,12 +1407,12 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             #U_y = 0
 
             roll_error = U_y - roll #+ np.random.normal(0, 0.001)*np.pi/180
-            U_roll = rot_control_roll.calculate(-roll_error) #- roll_vel * 0.1
+            U_roll = rot_control_roll.calculate(-roll_error) #- roll_vel * 0.1 """
 
 
             yaw_error = target_yaw - yaw #+ np.random.normal(0, 0.001)*np.pi/180
             U_yaw = rot_control_yaw.calculate(yaw_error)
-
+            
         
 
             #U_z = -drone.mass * drone.gravity
@@ -1385,10 +1420,36 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             #U_x = 0
             #U_y = 0
             #U_pitch = 0
-            #U_roll = 0
-            #U_yaw = 0
+            U_roll = 0
+            U_yaw = 0
+
+            _,q = p.getBasePositionAndOrientation(droneId)
+            q = (-q[0], -q[1], -q[2], q[3])
+            _, curr_angular_velocity = p.getBaseVelocity(droneId)
+            
+            print(f"roll, pitch, yaw: {p.getEulerFromQuaternion(q)}")
+            qd = rpyToQuat(0, -U_x, 0)
+            q_error = quatError(qd, q)
 
 
+            #values = [1.1764890414266964, 0.9431016325226598, 2.03781077745728, 0.0002980309261777234, 1.263723723151308, 0.6390123588054966]
+            values = [0, 1, 0, 0,0.9,0]
+            
+            quat_p = np.array([[values[0],0,0],
+                              [0, values[1], 0],
+                              [0,0,values[2]]]) 
+
+            quat_d = np.array([[values[3],0,0],
+                              [0, values[4], 0],
+                              [0,0,values[5]]])
+
+
+            # Compute the control input
+            pid = quat_p * np.sign(q_error[3])* q_error[0:3] + quat_d * curr_angular_velocity
+
+            U_roll = pid[0][0]
+            U_pitch = pid[1][1]
+            U_yaw = pid[2][2]
             
 
             """ term1_12 = (2 * drone.l_0 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2))
@@ -1410,17 +1471,17 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             #omega_1 = np.sqrt(omega_1_mid) / 2
             #omega_2 = np.sqrt(omega_2_mid) / 2
 
-            term1_3p1 = -(drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2))
-            term1_3p2 = -U_pitch / (drone.k_t * (drone.l_0 + drone.l_2))
-            term1_3 = (term1_3p1 + term1_3p2) ** 2
-
-
+            term1_3p1 = (drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2))
+            term1_3p2 = U_pitch / (drone.k_t * (drone.l_0 + drone.l_2))
+            term1_3 = (-term1_3p1 - term1_3p2) ** 2 #term1_3p1**2 + term1_3p2**2 * np.sign(-term1_3p2)    
+            
             
 
 
-            term2_3p1 = -(drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0)
+
+            term2_3p1 = (drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0)
             term2_3p2 = U_yaw / (drone.l_0 * drone.k_t)
-            term2_3 = (term2_3p1 + term2_3p2) ** 2
+            term2_3 = (-term2_3p1 + term2_3p2) ** 2
 
             
 
@@ -1430,7 +1491,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
 
             alpha_term1 = -(drone.k_d * U_z) / (drone.k_t * drone.k_t * drone.l_0) + U_yaw / (drone.l_0 * drone.k_t)
             alpha_term2 = (drone.l_2 * U_z) / (drone.k_t * (drone.l_0 + drone.l_2)) - U_pitch / (drone.k_t * (drone.l_0 + drone.l_2))
-            alpha = np.arctan(alpha_term1 / alpha_term2)
+            alpha = np.arctan(alpha_term1 / alpha_term2) #+ 0.9553166196
 
             #print(f"alpha: {alpha}")
 
@@ -1439,6 +1500,10 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             forces[1] = drone.k_t * omega_2 ** 2 
             forces[2] = drone.k_t * omega_3 ** 2  #*np.cos(alpha) 
 
+            #print(f"forces: {forces}")
+            #print(f"U_z: {U_z}")
+            #print sum of forces
+            #print(f"sum of forces: {(forces[0] + forces[1] + forces[2])*-1}")
             #print(f"forces: {forces}")
 
             torque1 = drone.k_d * (omega_1 ** 2 + omega_2 ** 2 + omega_3 ** 2 * np.cos(alpha))  #+ 4
@@ -1463,6 +1528,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             # add the torque generated by the motors to the center of mass
             p.applyExternalTorque(objectUniqueId=droneId, linkIndex=-1, torqueObj=[0, 0, torque1], flags=p.LINK_FRAME)
 
+            
 
 
 
@@ -1475,6 +1541,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
 
             position, orientation = p.getBasePositionAndOrientation(droneId)
             y, x, z = position
+            
             #local_orientation = (-orientation[0], -orientation[1], -orientation[2], orientation[3])
             #pitch, roll, yaw = p.getEulerFromQuaternion(local_orientation)  
 
@@ -1525,7 +1592,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
                                 cameraTargetPosition=camera_target_position)
 
 
-            y_result.append(y_error)    
+            #y_result.append(y_error)    
             #print(f"i: {i}")
 
             i+= dt
@@ -1562,7 +1629,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             U_pitch = rot_control_pitch.calculate(pitch_error) 
 
 
-            #y_error = (target_y - y) + np.random.normal(0, 0.01)
+            """ #y_error = (target_y - y) + np.random.normal(0, 0.01)
             y_error = -np.sin(yaw) * global_x_error + np.cos(yaw) * global_y_error
             #print(f"y_error: {y_error}")
             U_y = trans_control_y.calculate(y_error) #- y_vel * 0.1
@@ -1570,7 +1637,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             #U_y = 0
 
             roll_error = U_y - roll #+ np.random.normal(0, 0.001)*np.pi/180
-            U_roll = rot_control_roll.calculate(-roll_error) #- roll_vel * 0.1
+            U_roll = rot_control_roll.calculate(-roll_error) #- roll_vel * 0.1 """
 
 
             yaw_error = target_yaw - yaw #+ np.random.normal(0, 0.001)*np.pi/180
@@ -1586,6 +1653,35 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             #U_roll = 0
             U_yaw = 0
 
+
+            _,q = p.getBasePositionAndOrientation(droneId)
+            q = (-q[0], -q[1], -q[2], q[3])
+            _, curr_angular_velocity = p.getBaseVelocity(droneId)
+            
+            qd = rpyToQuat(0, 0, 0)
+            q_error = quatError(qd, q)
+
+
+            
+            """ quat_p = np.array([[0,0,0],
+                              [0, 3.9177422768315404, 0],
+                              [0,0,0]]) """
+            quat_p = np.array([[u1[0],0,0],
+                              [0, u1[1], 0],
+                              [0,0,u1[2]]])
+            """ quat_d = np.array([[0,0,0],
+                              [0, 0.9802682375214986, 0],
+                              [0,0,0]]) """
+            quat_d = np.array([[u2[0],0,0],
+                              [0, u2[1], 0],
+                              [0,0,u2[2]]])
+
+            # Compute the control input
+            pid = quat_p * np.sign(q_error[3])* q_error[0:3] + quat_d * curr_angular_velocity
+
+            U_roll = pid[0][0]
+            U_pitch = pid[1][1]
+            U_yaw = pid[2][2]
 
             
 
@@ -1673,6 +1769,7 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
 
             position, orientation = p.getBasePositionAndOrientation(droneId)
             y, x, z = position
+            
             #local_orientation = (-orientation[0], -orientation[1], -orientation[2], orientation[3])
             #pitch, roll, yaw = p.getEulerFromQuaternion(local_orientation)  
 
@@ -1683,6 +1780,11 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
             old_pitch, old_roll, old_yaw = pitch_p, roll_p, yaw_p
             local_orientation = (-orientation[0], -orientation[1], -orientation[2], orientation[3])
             pitch_p, roll_p, yaw_p = p.getEulerFromQuaternion(local_orientation)
+
+
+
+
+
 
             # Calculate the differences in the angles
             delta_pitch = pitch_p - old_pitch
@@ -1723,7 +1825,8 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
                                 cameraTargetPosition=camera_target_position)
 
 
-            y_result.append(y_error*1000)    
+            #y_result.append(y_error*1000)
+            error_result.append(p.getEulerFromQuaternion(q))    
             #print(f"i: {i}")
 
     p.disconnect()
@@ -1731,7 +1834,8 @@ def tricopterSim(u1=None,u2=None,t=None,sim=False):
 
 
     
-    return y_result
+    return error_result
+
 
 if __name__ == "__main__":
 
@@ -1741,7 +1845,7 @@ if __name__ == "__main__":
     #1818.2152364843948   /1e6 for at få i m^2
 
     #-11.61166369003271, 3.1138720119081666, 21.95303938004841, -0.0027784102834362123, 0.01739939755233525, 0.009438289952790207
-    initial_guess = [-11.61166369003271, 3.1138720119081666, 21.95303938004841, -0.0027784102834362123, 0.01739939755233525, 0.009438289952790207]
+    initial_guess = [1.1764928482509731, 0.9430352246370248, 2.037815816526077, 0.0002980305146820086, 1.2637229195719013, 0.6390112459526589]
     #controller = PIDController(*initial_guess)
     tuned_params = pid_autotune2(tricopterSim,initial_guess, time=12)
     tuned_kp1, tuned_ki1, tuned_kd1, tuned_kp2, tuned_ki2, tuned_kd2 = tuned_params

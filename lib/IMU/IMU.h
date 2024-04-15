@@ -4,7 +4,7 @@
 #include "Fusion.h"
 #include "MPU9250.h"
 
-#define SAMPLE_RATE (1000) // Hz
+#define SAMPLE_RATE (100) // Hz
 #define GRAVITY 9.81f // m/s^2
 
 

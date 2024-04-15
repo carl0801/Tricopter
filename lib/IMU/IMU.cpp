@@ -109,10 +109,6 @@ void IMU::update_IMU() {
   quaternians[2] = quaternion.element.y;
   quaternians[3] = quaternion.element.z;
 
-  //printf("mx: %f, my: %f, mz: %f\n", magnetometer.axis.x, magnetometer.axis.y, magnetometer.axis.z);
-
-  // Delay to maintain sample rate
-  delayMicroseconds(1/SAMPLE_RATE * 1000000);
 }
 
 // initialise the IMU

@@ -215,6 +215,7 @@ void IMU::getLidarData(double* data1, double* data2) {
   #endif //VL53L0X_ADDRESS
 }
 
+// Get angular velocity
 void IMU::getAngularVelocity(double* x, double* y, double* z) {
 
   // Get gyroscope data

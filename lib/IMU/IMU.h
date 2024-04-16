@@ -38,9 +38,9 @@ class IMU {
         double deltat;
 
         // Sensor variables
-        double accel[3]; 
-        double magnetom[3];
-        double gyro[3];
+        float accel[3]; 
+        float magnetom[3];
+        float gyro[3];
 
         // Data variables
         double euler_rad[3];

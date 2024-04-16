@@ -187,7 +187,9 @@ void controlTask(void *pvParameters) {
       moterValues.omega_1 = 0;
       moterValues.omega_2 = 0;
       moterValues.omega_3 = 0;
-      moterValues.alpha = 0;
+      moterValues.alpha_1 = 0;
+      moterValues.alpha_2 = 0;
+      moterValues.alpha_3 = 0;
       updateMotor(moterValues);
       vTaskDelete(NULL);
     }

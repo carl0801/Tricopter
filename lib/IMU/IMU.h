@@ -33,9 +33,9 @@ class IMU {
         void read_sensors();
 
         // Variables
-        float time_now;
-        float time_former;
-        float deltat;
+        double time_now;
+        double time_former;
+        double deltat;
 
         // Sensor variables
         float accel[3]; 
@@ -43,9 +43,9 @@ class IMU {
         float gyro[3];
 
         // Data variables
-        float euler_rad[3];
-        float quaternians[4];
-        float position[3];
+        double euler_rad[3];
+        double quaternians[4];
+        double position[3];
 
 
 
@@ -53,13 +53,14 @@ class IMU {
         // Functions
         void init();
         void update_IMU();
-        void sendToPC(float* data1, float* data2, float* data3);
+        void sendToPC(double* data1, double* data2, double* data3);
 
         // get data functions
-        void getEulerRad(float* roll, float* pitch, float* yaw);
-        void getQuaternians(float* w, float* x, float* y, float* z);
-        void getEarthAcceleration(float* x, float* y, float* z);
-        void getLidarData(float* data1, float* data2);
+        void getEulerRad(double* roll, double* pitch, double* yaw);
+        void getQuaternians(double* w, double* x, double* y, double* z);
+        void getEarthAcceleration(double* x, double* y, double* z);
+        void getLidarData(double* data1, double* data2);
+        void getAngularVelocity(double* x, double* y, double* z);
 
         
 };

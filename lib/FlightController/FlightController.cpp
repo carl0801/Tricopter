@@ -104,13 +104,10 @@ motorData FlightController::calculate() {
     //calculate a error quaternion between q and target_q
     quad_error = (target_q * q.inverse());
   
-    U_quad = pquad * (quad_error.coeffs().head(3) * (quad_error.w() > 0 ? 1 : -1)) + pquad2 * Eigen::Vector3d(0, 0, 0); //angular_velocity;
-
-
-    U[3] = U_quad(0);
-    U[4] = U_quad(1);
-    U[5] = U_quad(2);
+    //calculate the control input for the tricopter orientation
+    U.segment<3>(3) = pquad * (quad_error.coeffs().head(3) * (quad_error.w() > 0 ? 1 : -1)) + pquad2 * angular_velocity;
     
+    //calculate the motor speeds
     Omega = M * U;
 
     Output.omega_1 = std::pow(Omega(0)*Omega(0) + Omega(3)*Omega(3), 0.25);

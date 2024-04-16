@@ -10,6 +10,9 @@ const FusionVector accelerometerOffset = {0.03f, 0.0f, -0.005f};
 const FusionMatrix softIronMatrix = {0.950194, -0.023079, 0.0223308, -0.023079, 0.977227, -0.0143745, 0.0223308, -0.0143745, 0.939388}; //{0.970484, -0.0013793, 0.0404112, -0.0013793, 0.98968, 0.0134713, 0.0404112, 0.0134713, 0.93159}; 
 const FusionVector hardIronOffset = {-94.6133, -5.1279, 20.4048};//{-113.612, 0.10103, 24.6554};
 
+FusionVector gyroscope = {0,0,0};  
+FusionVector accelerometer = {0,0,0}; 
+FusionVector magnetometer = {0,0,0};
 
 // Initialise algorithms
 FusionOffset offset;
@@ -69,9 +72,9 @@ void IMU::update_IMU() {
   deltat = (double)(time_now - time_former) / 1000000.0f;
   time_former = time_now;
   
-  FusionVector gyroscope = {gyro[0], gyro[1], gyro[2]};  
-  FusionVector accelerometer = {accel[0], accel[1], accel[2]}; 
-  FusionVector magnetometer = {magnetom[0], magnetom[1], magnetom[2]};
+  gyroscope = {gyro[0], gyro[1], gyro[2]};  
+  accelerometer = {accel[0], accel[1], accel[2]}; 
+  magnetometer = {magnetom[0], magnetom[1], magnetom[2]};
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
@@ -109,10 +112,6 @@ void IMU::update_IMU() {
   quaternians[2] = quaternion.element.y;
   quaternians[3] = quaternion.element.z;
 
-  //printf("mx: %f, my: %f, mz: %f\n", magnetometer.axis.x, magnetometer.axis.y, magnetometer.axis.z);
-
-  // Delay to maintain sample rate
-  delayMicroseconds(1/SAMPLE_RATE * 1000000);
 }
 
 // initialise the IMU
@@ -216,9 +215,16 @@ void IMU::getLidarData(double* data1, double* data2) {
   #endif //VL53L0X_ADDRESS
 }
 
-// Get the angular velocity from the IMU
+// Get angular velocity
 void IMU::getAngularVelocity(double* x, double* y, double* z) {
-  *x = gyro[0];
-  *y = gyro[1];
-  *z = gyro[2];
+
+  // Get gyroscope data
+  const FusionVector halfGyroscope = FusionVectorMultiplyScalar(gyroscope, FusionDegreesToRadians(0.5f));
+
+  // Apply feedback to gyroscope
+  const FusionVector adjustedHalfGyroscope = FusionVectorAdd(halfGyroscope, FusionVectorMultiplyScalar(FusionVectorAdd(ahrs.halfAccelerometerFeedback, ahrs.halfMagnetometerFeedback), ahrs.rampedGain));
+
+  *x = adjustedHalfGyroscope.axis.x;
+  *y = adjustedHalfGyroscope.axis.y;
+  *z = adjustedHalfGyroscope.axis.z;
 }

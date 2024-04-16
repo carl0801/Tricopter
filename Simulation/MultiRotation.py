@@ -166,7 +166,7 @@ def tricopterSim(values=None,sim=False):
 
     trans_control_x = PIDController(6,1,1, dt)
 
-    trans_control_y =  PIDController(3,0,1, dt)
+    trans_control_y =  PIDController(6,1,1, dt)
 
     trans_control_z = PIDController(2,0,0, dt)
 
@@ -289,13 +289,13 @@ def tricopterSim(values=None,sim=False):
     forces = [0,0,0]
     test_rot = 0
     i = 0
-    sim_time = 1000*dt
+    sim_time = 10000*dt
 
     
 
     U_z = 0
     while i < sim_time:
-        o_target_y += 0.001
+        target_z += 0.001
         position,q = p.getBasePositionAndOrientation(droneId)
 
         x,y,z = position        
@@ -310,12 +310,12 @@ def tricopterSim(values=None,sim=False):
 
         #print(f"q: {q}")
 
-        """ z_error = (target_z - z) #+ np.random.normal(0, 0.01)
+        z_error = (target_z - z) #+ np.random.normal(0, 0.01)
         U_z = trans_control_z.calculate(-(z_error)) 
 
         
 
-        U_z -= drone.mass * drone.gravity  """ 
+        U_z -= drone.mass * drone.gravity
 
 
         global_x_error = (o_target_x - x) #+ np.random.normal(0, 0.01)
@@ -358,7 +358,7 @@ def tricopterSim(values=None,sim=False):
         _, curr_angular_velocity = p.getBaseVelocity(droneId)
 
         # Convert the current orientation quaternion to a rotation matrix
-        rotation_matrix = np.array(p.getMatrixFromQuaternion(q)).reshape(3, 3)
+        rotation_matrix = np.array(p.getMatrixFromQuaternion(local_quat)).reshape(3, 3)
 
         # Convert the angular velocity to the local frame
         local_angular_velocity = np.dot(rotation_matrix.T, curr_angular_velocity)
@@ -366,32 +366,38 @@ def tricopterSim(values=None,sim=False):
         #print(f"roll, pitch, yaw: {p.getEulerFromQuaternion(q)}")
         q_error = quatError(qd, local_quat)
 
+        curr_angular_velocity = [curr_angular_velocity[1], curr_angular_velocity[2], curr_angular_velocity[0]]
 
         #values = 0.12666346, 0.08184413, 0.02654659, 0.09935305, 0.14897474, 0.11669337
         if not sim:
-            values = [0.09999804543891046,0.0999958690692744,0.10000005600889045,-8.698480525232753e-07,0.0002501605829050988,5.723843841086013e-07]
-            values = [0.10005955877587307,0.10052783472445909,1.10000975770710871,-8.701081305169817e-07,0.00026104502776980794,0]
-        quat_p = np.array([[values[0],0,0],
-                            [0, values[1], 0],
-                            [0,0,values[2]]]) 
+            #values = [0.09999804543891046,0.0999958690692744,0.10000005600889045,-8.698480525232753e-07,0.0002501605829050988,5.723843841086013e-07]
+            #values = [0.10005955877587307,10.10052783472445909,1.10000975770710871,-8.701081305169817e-07,0.00026104502776980794,0]
+            values = [0.1,10,1, 0.01,0.01,0.01]
+        quat_p_outer = np.array([[values[0],0,0],
+                                [0, values[1], 0],
+                                [0,0,values[2]]]) 
 
-        quat_d = np.array([[values[3],0,0],
-                            [0, values[4], 0],
-                            [0,0,values[5]]])
+        quat_p_inner = np.array([[values[3],0,0],
+                                [0, values[4], 0],
+                                [0,0,values[5]]])
 
 
         # Compute the control input
-        pid = quat_p * np.sign(q_error[3])* q_error[0:3] #+ quat_d * local_angular_velocity
-        #print(f"pid: {pid}")
-        U_pitch = pid[0][0]
-        U_roll = pid[1][1]
-        U_yaw = pid[2][2]
-        print(f" yaw: {yaw}, U_yaw: {U_yaw}, q_error: {q_error[2]}")
+        pid = quat_p_outer @ q_error[0:3] * np.sign(q_error[3]) + quat_p_inner @ local_angular_velocity
+        
+        print(f"pid: {pid}")
+        U_pitch = pid[0]
+        """ U_roll = pid[1][1]
+        U_yaw = pid[2][2] """
+        U_yaw = pid[1]
+        U_roll = pid[2]
+
+        print(f" yaw: {yaw}, U_yaw: {U_yaw}, q_error: {q_error[1]}")
         
         #U_yaw += torque
 
         #print(f"U_z: {U_z}")
-        U_z = -drone.mass * drone.gravity
+        #U_z = -drone.mass * drone.gravity
         #print(f"U_z: {U_z}")
         #U_x = 0
         #U_y = 0

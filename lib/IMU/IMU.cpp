@@ -47,7 +47,7 @@ void IMU::read_sensors() {
 }
 
 // Send data to PC
-void IMU::sendToPC(float* data1, float* data2, float* data3){ 
+void IMU::sendToPC(double* data1, double* data2, double* data3){ 
 
   byte* byteData1 = (byte*)(data1);
   byte* byteData2 = (byte*)(data2);
@@ -66,7 +66,7 @@ void IMU::update_IMU() {
 
   // Calculate time since last loop
   time_now = micros();
-  deltat = (float)(time_now - time_former) / 1000000.0f;
+  deltat = (double)(time_now - time_former) / 1000000.0f;
   time_former = time_now;
   
   FusionVector gyroscope = {gyro[0], gyro[1], gyro[2]};  
@@ -185,14 +185,14 @@ void IMU::init() {
 }
 
 // Get euler angles
-void IMU::getEulerRad(float* roll, float* pitch, float* yaw) {
+void IMU::getEulerRad(double* roll, double* pitch, double* yaw) {
   *roll = euler_rad[0];
   *pitch = euler_rad[1];
   *yaw = euler_rad[2];
 }
 
 // Get quaternians
-void IMU::getQuaternians(float* w, float* x, float* y, float* z) {
+void IMU::getQuaternians(double* w, double* x, double* y, double* z) {
   *w = quaternians[0];
   *x = quaternians[1];
   *y = quaternians[2];
@@ -200,18 +200,25 @@ void IMU::getQuaternians(float* w, float* x, float* y, float* z) {
 }
 
 // Get position
-void IMU::getEarthAcceleration(float* x, float* y, float* z) {
+void IMU::getEarthAcceleration(double* x, double* y, double* z) {
   *x = position[0];
   *y = position[1];
   *z = position[2];
 }
 
 // get lidar data
-void IMU::getLidarData(float* data1, float* data2) {
+void IMU::getLidarData(double* data1, double* data2) {
   #ifdef VL53L0X_CONNECT
 
     *data1 = sensors[0].readRangeContinuousMillimeters();
     *data2 = 0;//sensors[1].readRangeContinuousMillimeters();
 
   #endif //VL53L0X_ADDRESS
+}
+
+// Get the angular velocity from the IMU
+void IMU::getAngularVelocity(double* x, double* y, double* z) {
+  *x = gyro[0];
+  *y = gyro[1];
+  *z = gyro[2];
 }

@@ -46,6 +46,7 @@ class IMU {
         double euler_rad[3];
         double quaternians[4];
         double position[3];
+        double velocity[3];
 
 
 

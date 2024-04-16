@@ -96,6 +96,12 @@ void IMU::update_IMU() {
   // Get Earth acceleration
   const FusionVector earth = FusionAhrsGetEarthAcceleration(&ahrs);
 
+  // Get gyroscope data
+  const FusionVector halfGyroscope = FusionVectorMultiplyScalar(gyroscope, FusionDegreesToRadians(0.5f));
+
+  // Angular velocity
+  const FusionVector angvel = FusionVectorMultiplyScalar(FusionVectorAdd(halfGyroscope, FusionVectorMultiplyScalar(FusionVectorAdd(ahrs.halfAccelerometerFeedback, ahrs.halfMagnetometerFeedback), ahrs.rampedGain)), deltat);
+
   // Update position every 100 iterations
   position[0] = earth.axis.x * GRAVITY;
   position[1] = earth.axis.y * GRAVITY;
@@ -111,6 +117,11 @@ void IMU::update_IMU() {
   quaternians[1] = quaternion.element.x;
   quaternians[2] = quaternion.element.y;
   quaternians[3] = quaternion.element.z;
+
+  // Update angular velocity
+  velocity[0] = angvel.axis.x;
+  velocity[1] = angvel.axis.y;
+  velocity[2] = angvel.axis.z;
 
 }
 
@@ -217,14 +228,7 @@ void IMU::getLidarData(double* data1, double* data2) {
 
 // Get angular velocity
 void IMU::getAngularVelocity(double* x, double* y, double* z) {
-
-  // Get gyroscope data
-  const FusionVector halfGyroscope = FusionVectorMultiplyScalar(gyroscope, FusionDegreesToRadians(0.5f));
-
-  // Apply feedback to gyroscope
-  const FusionVector adjustedHalfGyroscope = FusionVectorAdd(halfGyroscope, FusionVectorMultiplyScalar(FusionVectorAdd(ahrs.halfAccelerometerFeedback, ahrs.halfMagnetometerFeedback), ahrs.rampedGain));
-
-  *x = adjustedHalfGyroscope.axis.x;
-  *y = adjustedHalfGyroscope.axis.y;
-  *z = adjustedHalfGyroscope.axis.z;
+  *x = velocity[0];
+  *y = velocity[1];
+  *z = velocity[2];
 }

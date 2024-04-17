@@ -61,14 +61,15 @@ FlightController::FlightController(double dt) : dt(dt),
     //iden is a 3x3 identity matrix * 0.01
     pquad2(Eigen::Matrix3d::Identity() * 0.01),
     
-    drone(0.3119363164318645, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 0.01, 0.0000001),
+    drone(0.3119363164318645, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 2e-6, 7.295e-8),
+    //  1                                                               2                                                   3                                                 4                                         5                           6        
     M((Eigen::Matrix<double, 6, 6>() << 
-        -1/3*std::sqrt(3)/drone.k_t, 1/3*1/drone.k_t, -1/3*drone.k_d/(drone.l_0*std::pow(drone.k_t, 2)), 0, 0, 1/3*1/(drone.l_0*drone.k_t),
-        1/3*std::sqrt(3)/drone.k_t, 1/3*1/drone.k_t, -1/3*drone.k_d/(drone.l_0*std::pow(drone.k_t, 2)), 0, 0, 1/3*1/(drone.l_0*drone.k_t),
-        0, -2/3*1/drone.k_t, -1/3*drone.k_d/(drone.l_0*std::pow(drone.k_t, 2)), 0, 0, 1/3*1/(drone.l_0*drone.k_t),
-        1/3*drone.k_d*std::sqrt(3)/(drone.l_0*std::pow(drone.k_t, 2)), -1/3*drone.k_d/(drone.l_0*std::pow(drone.k_t, 2)), -1/3*1/drone.k_t, -1/3*std::sqrt(3)/(drone.l_0*drone.k_t), 1/3*1/(drone.l_0*drone.k_t), 0,
-        -1/3*drone.k_d*std::sqrt(3)/(drone.l_0*std::pow(drone.k_t, 2)), -1/3*drone.k_d/(drone.l_0*std::pow(drone.k_t, 2)), -1/3*1/drone.k_t, 1/3*std::sqrt(3)/(drone.l_0*drone.k_t), 1/3*1/(drone.l_0*drone.k_t), 0,
-        0, 2/3*drone.k_d/(drone.l_0*std::pow(drone.k_t, 2)), -1/3*1/drone.k_t, 0, -2/3*1/(drone.l_0*drone.k_t), 0).finished()),
+        -std::sqrt(3)/(3*drone.k_t),                                    1/(3*drone.k_t),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
+        std::sqrt(3)/(3*drone.k_t),                                     1/(3*drone.k_t),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
+        0,                                                              -2/(3*drone.k_t),                                   -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
+        (drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t,2)*drone.l_0),   -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),     -1/(3*drone.k_t),                                 -std::sqrt(3)/(3*drone.l_0*drone.k_t),    1/(3*drone.l_0*drone.k_t),  0,
+        -(drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t,2)*drone.l_0),  -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),     -1/(3*drone.k_t),                                 std::sqrt(3)/(3*drone.l_0*drone.k_t),     1/(3*drone.l_0*drone.k_t),  0,
+        0,                                                              (2*drone.k_d)/(3*drone.l_0*std::pow(drone.k_t,2)),  -1/(3*drone.k_t),                                 0,                                        -2/(3*drone.l_0*drone.k_t), 0).finished()),
     target_x(0),
     target_y(0),
     target_z(0),
@@ -85,11 +86,9 @@ FlightController::FlightController(double dt) : dt(dt),
 motorData FlightController::calculate() {
     resetTargetAngle(target_q, target_x, target_y, target_z); //makes it target 0
     imu.getQuaternians(&q.w(), &q.x(), &q.y(), &q.z()); //get the current quaternion
-    imu.getEulerRad(nullptr, nullptr, &yaw); //get the current yaw
+    imu.getEulerRad(&roll, &pitch, &yaw); //get the current yaw
     imu.getLidarData(&z,&lidar2);//get the current angle and altitude
     imu.getAngularVelocity(&angular_velocity[0], &angular_velocity[1], &angular_velocity[2]); //get the current angular velocity
-
-
 
 
     x_error = (cos(yaw)*(target_x - x) + sin(yaw)*(target_y - y));

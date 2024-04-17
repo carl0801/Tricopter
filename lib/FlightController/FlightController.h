@@ -95,6 +95,8 @@ private:
     double y;
     double z;
     double yaw;
+    double roll;
+    double pitch;
     double w, qx, qy, qz;
     double lidar2;
 

@@ -80,12 +80,18 @@ void processCommand(const char command) {
 FlightController flightController(STEP_TIME);
 
 void updateMotor(motorData moterValues) {
-  
-  //make sure the value is max 180
-  moterValues.omega_1 = std::min(moterValues.omega_1 / 7500 * 180, 180.0);
-  moterValues.omega_2 = std::min(moterValues.omega_2 / 7500 * 180, 180.0);
-  moterValues.omega_3 = std::min(moterValues.omega_3 / 7500 * 180, 180.0);
 
+  //make sure the value is max 180
+  moterValues.omega_1 = std::min((moterValues.omega_1 - 182.69 ) / 843.09 * 180, 90.0);
+  moterValues.omega_2 = std::min((moterValues.omega_2 - 182.69 ) / 843.09 * 180, 90.0);
+  moterValues.omega_3 = std::min((moterValues.omega_3 - 182.69 ) / 843.09 * 180, 90.0);
+
+  Serial.print("omega_1: ");
+  Serial.print(moterValues.omega_1);
+  Serial.print(" omega_2: ");
+  Serial.print(moterValues.omega_2);
+  Serial.print(" omega_3: ");
+  Serial.println(moterValues.omega_3);
 
 
   esc1.write(moterValues.omega_1);
@@ -226,7 +232,7 @@ void setup() {
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.println("Connecting...");
+    Serial.println("Trying to connect to wifi...");
   }
   Serial.println("Connected to WiFi");
 

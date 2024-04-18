@@ -78,7 +78,7 @@ def visualize_data(data_file):
     #print the value of the outputs when z is 0.5
     #find the index of the value of z when it is 0.5
     for i in range(len(pos_z)):
-        if pos_z[i] == 0.5:
+        if pos_z[i] > 0.3 and pos_z[i] < 0.4:
             print("Output1:", output1[i])
             print("Output2:", output2[i])
             print("Output3:", output3[i])

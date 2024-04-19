@@ -84,6 +84,7 @@ motorData FlightController::calculate(double yawOffset) {
     imu.update_IMU();
     resetTargetAngle(target_q, target_x, target_y, target_z); //makes it target 0
     imu.getQuaternians(&q.w(), &q.x(), &q.y(), &q.z()); //get the current quaternion
+    imu.getPos(&x, &y, &z); //get the current position
     imu.getEulerRad(&roll, &pitch, &yaw); //get the current yaw
     imu.getLidarData(&z,&lidar2);//get the current angle and altitude
     imu.getAngularVelocity(&angular_velocity[0], &angular_velocity[1], &angular_velocity[2]); //get the current angular velocity

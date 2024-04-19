@@ -15,16 +15,16 @@ IPAddress subnet(255,255,255,0);
 WiFiServer server(80);
 
 
-const double STEP_TIME = 10; // timeInterval for flight controller
+const double STEP_TIME = 5; // timeInterval for flight controller
 //const double ANGLE_THRESHOLD = 0.05; // threshold for change in angle
 //const double ALPHA = 0.8; // alpha value for the complementary filter
 
-extern IMU imu;
+
 Servo esc1;
 Servo esc2;
 Servo esc3;
 
-motorData moterValues;
+motorData motorValues;
 
 
 double x = 0;
@@ -78,33 +78,46 @@ void processCommand(const char command) {
 
 
 FlightController flightController(STEP_TIME);
-
-void updateMotor(motorData moterValues) {
+IMU& imu = flightController.imu;
+void updateMotor(motorData motorValues) {
 
   //make sure the value is max 180
-  moterValues.omega_1 = std::min((moterValues.omega_1 - 182.69 ) / 843.09 * 180, 90.0);
-  moterValues.omega_2 = std::min((moterValues.omega_2 - 182.69 ) / 843.09 * 180, 90.0);
-  moterValues.omega_3 = std::min((moterValues.omega_3 - 182.69 ) / 843.09 * 180, 90.0);
+  motorValues.omega_1 = std::min((motorValues.omega_1 - 182.69 ) / 843.09 * 180, 90.0);
+  motorValues.omega_2 = std::min((motorValues.omega_2 - 182.69 ) / 843.09 * 180, 90.0);
+  motorValues.omega_3 = std::min((motorValues.omega_3 - 182.69 ) / 843.09 * 180, 90.0);
 
-  Serial.print("omega_1: ");
-  Serial.print(moterValues.omega_1);
+  //constrain the value to be between 0 and 180
+  motorValues.alpha_1 = constrain(motorValues.alpha_1*180/M_PI + 90, 0, 180);
+  motorValues.alpha_2 = constrain(motorValues.alpha_2*180/M_PI + 90, 0, 180);
+  motorValues.alpha_3 = constrain(motorValues.alpha_3*180/M_PI + 90, 0, 180);
+
+  /* Serial.print("omega_1: ");
+  Serial.print(motorValues.omega_1);
   Serial.print(" omega_2: ");
-  Serial.print(moterValues.omega_2);
+  Serial.print(motorValues.omega_2);
   Serial.print(" omega_3: ");
-  Serial.println(moterValues.omega_3);
+  Serial.println(motorValues.omega_3); */
 
 
-  esc1.write(moterValues.omega_1);
-  esc2.write(moterValues.omega_2);
-  esc3.write(moterValues.omega_3);
+  esc1.write(motorValues.omega_1);
+  esc2.write(motorValues.omega_2);
+  esc3.write(motorValues.omega_3);
+  /*
+  servo1.write(motorValues.alpha_1*180/M_PI)
+  servo2.write(motorValues.alpha_2*180/M_PI)
+  servo3.write(motorValues.alpha_3*180/M_PI)
+  
+  */
+
+
 }
 
 
 
-void control(){
+void control(double yawOffset){
   //flightController.calculate();
   //motorData data = flightController.getMotorData();
-  updateMotor(flightController.calculate());
+  updateMotor(flightController.calculate(double(yawOffset)));
 }
 
 void com(){
@@ -171,37 +184,37 @@ void comTask(void *pvParameters) {
   vTaskDelete(NULL);
 }
 
-int rhod_test = 0;
-unsigned long startTime;
-unsigned long endTime;
+
+
 
 void controlTask(void *pvParameters) {
-  while (1) {
-    // Your control task code here
-    // This will run indefinitely
-    //Serial.print("Control task");
+  unsigned long startTime;
+  unsigned long endTime;
+  double yawOffset = 0;
+  double placeholder = 0;
+  double placeholder2 = 0;
+  imu.getEulerRad(&placeholder, &placeholder2, &yawOffset);
+  while (run) {
+
     startTime = millis(); // Get the current time
 
-    control();
+    control(yawOffset);
 
     endTime = millis(); // Get the current time again
   
-    Serial.print("Execution time: ");
+    /* Serial.print("Execution time: ");
     Serial.print(endTime - startTime);
-    Serial.println(" ms");
-    if ((run == false)){
-      moterValues.omega_1 = 0;
-      moterValues.omega_2 = 0;
-      moterValues.omega_3 = 0;
-      moterValues.alpha_1 = 0;
-      moterValues.alpha_2 = 0;
-      moterValues.alpha_3 = 0;
-      updateMotor(moterValues);
-      vTaskDelete(NULL);
-    }
-    //rhod_test++;
+    Serial.println(" ms"); */
+
     vTaskDelay(pdMS_TO_TICKS(STEP_TIME)); // Delay for STEP_TIME milliseconds
   }
+  motorValues.omega_1 = 0;
+  motorValues.omega_2 = 0;
+  motorValues.omega_3 = 0;
+  motorValues.alpha_1 = 0;
+  motorValues.alpha_2 = 0;
+  motorValues.alpha_3 = 0;
+  updateMotor(motorValues);
   vTaskDelete(NULL);
 }
 
@@ -253,7 +266,10 @@ void setup() {
   const int comCore = 0;
 
   // add delay to allow the ESCs to initialize
-  delay(10000);
+  for (int i = 0; i < 1000; i++) {
+    imu.update_IMU();
+    delay(10); // Delay for 10 milliseconds
+  }
 
   xTaskCreatePinnedToCore(
     comTask,          // Task function

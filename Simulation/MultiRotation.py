@@ -8,7 +8,7 @@ import pybullet as p
 import pybullet_data
 import time
 from multiprocessing import Pool
-dt = 0.01
+dt = 0.05
 
 class PIDController:
     def __init__(self, kp, ki, kd, dt=0.01, max_integral=None, derivative_filter=0.1):
@@ -283,7 +283,7 @@ def tricopterSim(values=None,sim=False):
                                 cameraYaw=camera_yaw,
                                 cameraPitch=camera_pitch,
                                 cameraTargetPosition=camera_target_position)
-
+    p.setTimeStep(dt)
 
     error_result = []
     forces = [0,0,0]

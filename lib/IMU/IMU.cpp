@@ -102,15 +102,30 @@ void IMU::update_IMU() {
   // Angular velocity
   const FusionVector angvel = FusionVectorMultiplyScalar(FusionVectorAdd(halfGyroscope, FusionVectorMultiplyScalar(FusionVectorAdd(ahrs.halfAccelerometerFeedback, ahrs.halfMagnetometerFeedback), ahrs.rampedGain)), deltat);
 
-  // Update position every 100 iterations
-  position[0] = earth.axis.x * GRAVITY;
-  position[1] = earth.axis.y * GRAVITY;
-  position[2] = earth.axis.z * GRAVITY + 0.44f;
+  // Update acceleration
+  acceleration[0] = (earth.axis.x * GRAVITY + 0.009331);
+  acceleration[1] = (earth.axis.y * GRAVITY + 0.008373);
+  acceleration[2] = -(earth.axis.z * GRAVITY + 0.419104);
+
+  // Update velocity
+  for (int i = 0; i < 3; i++) {
+    if (acceleration[i] < 0.01 && acceleration[i] > -0.01) {
+      velocity[i] = 0.0f;
+    }
+    else {
+      velocity[i] += acceleration[i] * deltat;
+    }
+  }
+
+  // Update position
+  position[0] += velocity[0] * deltat;
+  position[1] += velocity[1] * deltat;
+  position[2] += velocity[2] * deltat;
   
   // Update euler angles
   euler_rad[0] = (euler.angle.roll * DEG_TO_RAD);
   euler_rad[1] = (euler.angle.pitch * DEG_TO_RAD);
-  euler_rad[2] = (euler.angle.yaw * DEG_TO_RAD) - (4.2f * DEG_TO_RAD);
+  euler_rad[2] = (euler.angle.yaw * DEG_TO_RAD);
 
   // Update quaternion
   quaternians[0] = quaternion.element.w;
@@ -210,7 +225,7 @@ void IMU::getQuaternians(double* w, double* x, double* y, double* z) {
 }
 
 // Get position
-void IMU::getEarthAcceleration(double* x, double* y, double* z) {
+void IMU::getPos(double* x, double* y, double* z) {
   *x = position[0];
   *y = position[1];
   *z = position[2];
@@ -228,7 +243,12 @@ void IMU::getLidarData(double* data1, double* data2) {
 
 // Get angular velocity
 void IMU::getAngularVelocity(double* x, double* y, double* z) {
-  *x = velocity[0];
-  *y = velocity[1];
-  *z = velocity[2];
+  *x = angular_velocity[0];
+  *y = angular_velocity[1];
+  *z = angular_velocity[2];
+}
+
+// Get yaw
+void IMU::getYaw(double* yaw) {
+  *yaw = euler_rad[2];
 }

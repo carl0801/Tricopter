@@ -47,6 +47,8 @@ class IMU {
         double quaternians[4];
         double position[3];
         double velocity[3];
+        double acceleration[3];
+        double angular_velocity[3];
 
 
 
@@ -58,8 +60,9 @@ class IMU {
 
         // get data functions
         void getEulerRad(double* roll, double* pitch, double* yaw);
+        void getYaw(double* yaw);
         void getQuaternians(double* w, double* x, double* y, double* z);
-        void getEarthAcceleration(double* x, double* y, double* z);
+        void getPos(double* x, double* y, double* z);
         void getLidarData(double* data1, double* data2);
         void getAngularVelocity(double* x, double* y, double* z);
 

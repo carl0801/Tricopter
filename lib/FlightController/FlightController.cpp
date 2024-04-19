@@ -1,11 +1,6 @@
 #include <Arduino.h>
 #include "FlightController.h"
 
-IMU imu;
-
-
-
-
 
 void resetTargetAngle(Eigen::Quaterniond& q, double& x, double& y, double& z) {
     q = Eigen::Quaterniond(1, 0, 0, 0);
@@ -53,15 +48,17 @@ double PIDController::calculate(double error) {
 }
 
 FlightController::FlightController(double dt) : dt(dt),
+    imu(dt),
     TransControlX(6,1,1, dt),
     TransControlY(6,1,1, dt),
     TransControlZ(2,0,0, dt),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
-    pquad((Eigen::Vector3d(0.1, 10, 1)).asDiagonal()),
+    //pquad((Eigen::Vector3d(0.1, 10, 1)).asDiagonal()),
+    pquad((Eigen::Vector3d(0.1, 1, 0.1)).asDiagonal()),
     //iden is a 3x3 identity matrix * 0.01
     pquad2(Eigen::Matrix3d::Identity() * 0.01),
-    
-    drone(0.3119363164318645, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 6.269e-6, 7.295e-8),
+    //3119363164318645 wheight
+    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 6.769e-6, 7.295e-8),
     //  1                                                               2                                                   3                                                 4                                         5                           6        
     M((Eigen::Matrix<double, 6, 6>() << 
         -std::sqrt(3)/(3*drone.k_t),                                    1/(3*drone.k_t),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
@@ -83,14 +80,17 @@ FlightController::FlightController(double dt) : dt(dt),
     qy(0),
     qz(0) {}
 
-motorData FlightController::calculate() {
+motorData FlightController::calculate(double yawOffset) {
     imu.update_IMU();
     resetTargetAngle(target_q, target_x, target_y, target_z); //makes it target 0
     imu.getQuaternians(&q.w(), &q.x(), &q.y(), &q.z()); //get the current quaternion
     imu.getEulerRad(&roll, &pitch, &yaw); //get the current yaw
     imu.getLidarData(&z,&lidar2);//get the current angle and altitude
     imu.getAngularVelocity(&angular_velocity[0], &angular_velocity[1], &angular_velocity[2]); //get the current angular velocity
-
+    z = 0.0;
+    y = 0.0;
+    x = 0.0;
+    yaw -= yawOffset;
 
     x_error = (cos(yaw)*(target_x - x) + sin(yaw)*(target_y - y));
     U[0] = TransControlX.calculate(x_error);
@@ -106,6 +106,10 @@ motorData FlightController::calculate() {
   
     //calculate the control input for the tricopter orientation
     U.segment<3>(3) = pquad * (quad_error.coeffs().head(3) * (quad_error.w() > 0 ? 1 : -1)) + pquad2 * angular_velocity;
+    
+    Serial.print("U_roll: ");
+    Serial.println(U[3]);
+
     
     //calculate the motor speeds
     Omega = M * U;

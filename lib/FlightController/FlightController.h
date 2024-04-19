@@ -67,8 +67,9 @@ private:
 class FlightController {
 public:
     FlightController(double dt);
+    IMU imu;
 
-    motorData calculate();
+    motorData calculate(double yawOffset);
 private:
     double dt;
     PIDController TransControlX;

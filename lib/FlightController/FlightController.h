@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <ESP32Servo.h>
 #include <ESP32PWM.h>
-
+#include <ArduinoEigen.h>
 
 
 
@@ -14,12 +14,15 @@ struct motorData {
     double omega_1;
     double omega_2;
     double omega_3;
-    double alpha;
+    double alpha_1;
+    double alpha_2;
+    double alpha_3;
 };
 
 //void updateMotor(double omega_1, double omega_2, double omega_3, double alpha);
 
 void resetTargetAngle(double& yaw, double& x, double& y, double& z);
+
 
 class Tricopter {
 public:
@@ -64,72 +67,49 @@ private:
 class FlightController {
 public:
     FlightController(double dt);
+    IMU imu;
 
-    motorData calculate();
+    motorData calculate(double yawOffset);
 private:
     double dt;
     PIDController TransControlX;
     PIDController TransControlY;
     PIDController TransControlZ;
-    PIDController RotControlZ;
-    PIDController RotControlX;
-    PIDController RotControlY;
-    Tricopter drone;
+    const Eigen::Matrix3d pquad;
+    const Eigen::Matrix3d pquad2;
+    //PIDController RotControlZ;
+    //PIDController RotControlX;
+    //PIDController RotControlY;
+    const Tricopter drone;
     motorData Output;
-
+    const Eigen::Matrix<double, 6, 6> M;
+    Eigen::Matrix<double, 6, 1> U;
+    Eigen::Matrix<double, 6, 1> Omega;
     // Member variables
     double target_x;
     double target_y;
     double target_z;
-    double target_roll;
-    double target_pitch;
-    double target_yaw;
+    
+    Eigen::Quaterniond target_q;
 
     double x;
     double y;
     double z;
+    double yaw;
     double roll;
     double pitch;
-    double yaw;
+    double w, qx, qy, qz;
+    double lidar2;
 
     Eigen::Quaterniond q;
+    Eigen::Vector3d angular_velocity;
     
     double x_error;
-    double U_X;
     double y_error;
-    double U_Y;
     double z_error;
-    double U_Z;
-    double roll_error;
-    double U_r;
-    double pitch_error;
-    double U_p;
-    double yaw_error;
-    double U_y;
 
-    double omega_1;
-    double omega_2;
-    double omega_3;
-    double alpha;
-
-    double term1_12;
-    double term2_12;
-    double term3_12;
-    double omega_1_mid;
-    double omega_2_mid;
-
-    long double term1_3p1;
-    long double term1_3p2;
-    long double term1_3;
-
-    long double term2_3p1;
-    long double term2_3p2;
-    long double term2_3;
-
-    double alpha_term1;
-    double alpha_term2;
-
-
+    Eigen::Quaterniond quad_error;
+    Eigen::Vector3d U_quad;
 };
 
 #endif // FLIGHTCONTROLLER_H

@@ -3,20 +3,22 @@
 
 #include "Fusion.h"
 #include "MPU9250.h"
+#include "ArduinoEigen.h"
 
-#define SAMPLE_RATE (1000) // Hz
+
+//#define SAMPLE_RATE (100) // Hz
 #define GRAVITY 9.81f // m/s^2
 
 
 #define MPU9250_ADDRESS 0x69 // Device address when AD0 pin is connected to pin 2
 
-//#define VL53L0X_CONNECT true// Device address
+#define VL53L0X_CONNECT true// Device address
 
 
 #ifdef MPU9250_ADDRESS
 
     #include "MPU9250.h"
-    #define AD0_PIN 2 // AD0 pin is connected to pin 2
+    #define AD0_PIN 17 // AD0 pin is connected to pin 2
 
 #endif //MPU9250_ADDRESS 
 
@@ -31,11 +33,12 @@ class IMU {
     private:
         // Functions
         void read_sensors();
+        u_int SAMPLE_RATE;
 
         // Variables
-        float time_now;
-        float time_former;
-        float deltat;
+        double time_now;
+        double time_former;
+        double deltat;
 
         // Sensor variables
         float accel[3]; 
@@ -43,23 +46,29 @@ class IMU {
         float gyro[3];
 
         // Data variables
-        float euler_rad[3];
-        float quaternians[4];
-        float position[3];
+        double euler_rad[3];
+        double quaternians[4];
+        double position[3];
+        double velocity[3];
+        double acceleration[3];
+        double angular_velocity[3];
 
 
 
     public:
         // Functions
+        IMU(double dt);
         void init();
         void update_IMU();
-        void sendToPC(float* data1, float* data2, float* data3, float* data4, float* data5);
+        void sendToPC(double* data1, double* data2, double* data3);
 
         // get data functions
-        void getEulerRad(float* roll, float* pitch, float* yaw);
-        void getQuaternians(float* w, float* x, float* y, float* z);
-        void getEarthAcceleration(float* x, float* y, float* z);
-        void getLidarData(float* data1, float* data2);
+        void getEulerRad(double* roll, double* pitch, double* yaw);
+        void getYaw(double* yaw);
+        void getQuaternians(double* w, double* x, double* y, double* z);
+        void getPos(double* x, double* y, double* z);
+        void getLidarData(double* data1, double* data2);
+        void getAngularVelocity(double* x, double* y, double* z);
 
         
 };

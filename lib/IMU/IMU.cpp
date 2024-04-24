@@ -7,8 +7,8 @@ const FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
 const FusionVector accelerometerOffset = {0.03f, 0.0f, -0.005f};
-const FusionMatrix softIronMatrix = {0.950194, -0.023079, 0.0223308, -0.023079, 0.977227, -0.0143745, 0.0223308, -0.0143745, 0.939388}; //{0.970484, -0.0013793, 0.0404112, -0.0013793, 0.98968, 0.0134713, 0.0404112, 0.0134713, 0.93159}; 
-const FusionVector hardIronOffset = {-94.6133, -5.1279, 20.4048};//{-113.612, 0.10103, 24.6554};
+const FusionMatrix softIronMatrix = {0.950194, -0.023079, 0.0223308, -0.023079, 0.977227, -0.0143745, 0.0223308, -0.0143745, 0.939388}; 
+const FusionVector hardIronOffset = {-94.6133, -5.1279, 20.4048};
 
 FusionVector gyroscope = {0,0,0};  
 FusionVector accelerometer = {0,0,0}; 
@@ -239,7 +239,30 @@ void IMU::getPos(double* x, double* y, double* z) {
 void IMU::getLidarData(double* data1, double* data2) {
   #ifdef VL53L0X_CONNECT
 
-    *data1 = sensors[0].readRangeContinuousMillimeters();
+    // Read the measured height from the sensor
+    uint16_t measuredHeight = sensors[0].readRangeContinuousMillimeters();
+
+    // Convert the measured height to a 3D point in the sensor's coordinate system
+    Eigen::Vector3d pointInSensorCoordinates(0, 0, measuredHeight);
+
+    // Get the current orientation quaternion
+    Eigen::Quaterniond q;
+    q.w() = quaternians[0];
+    q.x() = quaternians[1];
+    q.y() = quaternians[2];
+    q.z() = quaternians[3];
+
+    // Calculate the inverse of the current orientation quaternion
+    Eigen::Quaterniond q_inv = q.inverse();
+
+    // Rotate the point by the inverse quaternion to get the point in the world's coordinate system
+    Eigen::Vector3d pointInWorldCoordinates = q_inv * pointInSensorCoordinates;
+
+    // The z-coordinate of the point in the world's coordinate system is the tilt-compensated height
+    double tiltCompensatedHeight = pointInWorldCoordinates.z();
+
+    // Return the compensated height
+    *data1 = tiltCompensatedHeight;
     *data2 = 0;//sensors[1].readRangeContinuousMillimeters();
 
   #endif //VL53L0X_ADDRESS

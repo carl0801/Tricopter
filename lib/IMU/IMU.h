@@ -3,6 +3,8 @@
 
 #include "Fusion.h"
 #include "MPU9250.h"
+#include "ArduinoEigen.h"
+
 
 //#define SAMPLE_RATE (100) // Hz
 #define GRAVITY 9.81f // m/s^2

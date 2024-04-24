@@ -24,6 +24,10 @@ Servo esc1;
 Servo esc2;
 Servo esc3;
 
+Servo servo1;
+Servo servo2;
+Servo servo3;
+
 motorData motorValues;
 
 
@@ -86,28 +90,25 @@ void updateMotor(motorData motorValues) {
   motorValues.omega_2 = std::min((motorValues.omega_2 - 182.69 ) / 843.09 * 180, 90.0);
   motorValues.omega_3 = std::min((motorValues.omega_3 - 182.69 ) / 843.09 * 180, 90.0);
 
+  //motorValues.alpha_1 = 0.0;
+  //motorValues.alpha_2 = 0.0;
+  //motorValues.alpha_3 = 0.0;
+
   //constrain the value to be between 0 and 180
-  motorValues.alpha_1 = constrain(motorValues.alpha_1*180/M_PI + 90, 0, 180);
-  motorValues.alpha_2 = constrain(motorValues.alpha_2*180/M_PI + 90, 0, 180);
-  motorValues.alpha_3 = constrain(motorValues.alpha_3*180/M_PI + 90, 0, 180);
-
-  /* Serial.print("omega_1: ");
-  Serial.print(motorValues.omega_1);
-  Serial.print(" omega_2: ");
-  Serial.print(motorValues.omega_2);
-  Serial.print(" omega_3: ");
-  Serial.println(motorValues.omega_3); */
+  motorValues.alpha_1 = constrain(motorValues.alpha_1*180/M_PI + 90, 30, 150);
+  motorValues.alpha_2 = constrain(motorValues.alpha_2*180/M_PI + 90, 30, 150);
+  motorValues.alpha_3 = constrain(motorValues.alpha_3*180/M_PI + 90, 30, 150);
 
 
-  esc1.write(motorValues.omega_1);
+  /* esc1.write(motorValues.omega_1);
   esc2.write(motorValues.omega_2);
-  esc3.write(motorValues.omega_3);
-  /*
-  servo1.write(motorValues.alpha_1*180/M_PI)
-  servo2.write(motorValues.alpha_2*180/M_PI)
-  servo3.write(motorValues.alpha_3*180/M_PI)
+  esc3.write(motorValues.omega_3); */
+
   
-  */
+  servo1.write(ceil(motorValues.alpha_1));
+  servo2.write(ceil(motorValues.alpha_2));
+  servo3.write(ceil(motorValues.alpha_3));
+ 
 
 
 }
@@ -257,9 +258,18 @@ void setup() {
   esc2.attach(33, 1000, 2000);
   esc3.attach(25, 1000, 2000);
 
+  servo1.attach(14);
+  servo2.attach(27);
+  servo3.attach(26);
+
+
   esc1.write(0);
   esc2.write(0);
   esc3.write(0);
+
+  servo1.write(90);
+  servo2.write(90);
+  servo3.write(90);
 
 
   const int controlCore = 1;

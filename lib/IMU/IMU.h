@@ -10,7 +10,7 @@
 
 #define MPU9250_ADDRESS 0x69 // Device address when AD0 pin is connected to pin 2
 
-//#define VL53L0X_CONNECT true// Device address
+#define VL53L0X_CONNECT true// Device address
 
 
 #ifdef MPU9250_ADDRESS

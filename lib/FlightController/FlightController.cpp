@@ -49,12 +49,12 @@ double PIDController::calculate(double error) {
 
 FlightController::FlightController(double dt) : dt(dt),
     imu(dt),
-    TransControlX(6,1,1, dt),
-    TransControlY(6,1,1, dt),
+    TransControlX(6,0,0, dt),
+    TransControlY(6,0,0, dt),
     TransControlZ(2,0,0, dt),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
     //pquad((Eigen::Vector3d(0.1, 10, 1)).asDiagonal()),
-    pquad((Eigen::Vector3d(0.1, 1, 0.1)).asDiagonal()),
+    pquad((Eigen::Vector3d(0.1, 1, 1)).asDiagonal()),
     //iden is a 3x3 identity matrix * 0.01
     pquad2(Eigen::Matrix3d::Identity() * 0.01),
     //3119363164318645 wheight
@@ -88,9 +88,11 @@ motorData FlightController::calculate(double yawOffset) {
     imu.getEulerRad(&roll, &pitch, &yaw); //get the current yaw
     imu.getLidarData(&z,&lidar2);//get the current angle and altitude
     imu.getAngularVelocity(&angular_velocity[0], &angular_velocity[1], &angular_velocity[2]); //get the current angular velocity
-    z = 0.0;
-    y = 0.0;
     x = 0.0;
+    y = 0.0;
+    z /= 1000;
+
+
     yaw -= yawOffset;
 
     x_error = (cos(yaw)*(target_x - x) + sin(yaw)*(target_y - y));

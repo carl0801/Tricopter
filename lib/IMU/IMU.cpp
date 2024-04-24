@@ -32,6 +32,10 @@ MPU9250 MPU(Wire, MPU9250_ADDRESS);
 
 #endif //VL53L0X_ADDRESS
 
+IMU::IMU(double dt):
+//static_cast it to a unsigned int
+  SAMPLE_RATE(static_cast<unsigned int>(1/(dt/1000)))
+{}
 
 // Read data from MPU9250
 void IMU::read_sensors() {

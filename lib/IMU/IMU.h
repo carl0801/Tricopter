@@ -3,6 +3,8 @@
 
 #include "Fusion.h"
 #include "MPU9250.h"
+#include "ArduinoEigen.h"
+
 
 #define SAMPLE_RATE (100) // Hz
 #define GRAVITY 9.81f // m/s^2
@@ -10,7 +12,7 @@
 
 #define MPU9250_ADDRESS 0x69 // Device address when AD0 pin is connected to pin 2
 
-//#define VL53L0X_CONNECT true// Device address
+#define VL53L0X_CONNECT true// Device address
 
 
 #ifdef MPU9250_ADDRESS

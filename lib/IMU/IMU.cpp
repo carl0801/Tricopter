@@ -235,7 +235,30 @@ void IMU::getPos(double* x, double* y, double* z) {
 void IMU::getLidarData(double* data1, double* data2) {
   #ifdef VL53L0X_CONNECT
 
-    *data1 = sensors[0].readRangeContinuousMillimeters();
+    // Read the measured height from the sensor
+    uint16_t measuredHeight = sensors[0].readRangeContinuousMillimeters();
+
+    // Convert the measured height to a 3D point in the sensor's coordinate system
+    Eigen::Vector3d pointInSensorCoordinates(0, 0, measuredHeight);
+
+    // Get the current orientation quaternion
+    Eigen::Quaterniond q;
+    q.w() = quaternians[0];
+    q.x() = quaternians[1];
+    q.y() = quaternians[2];
+    q.z() = quaternians[3];
+
+    // Calculate the inverse of the current orientation quaternion
+    Eigen::Quaterniond q_inv = q.inverse();
+
+    // Rotate the point by the inverse quaternion to get the point in the world's coordinate system
+    Eigen::Vector3d pointInWorldCoordinates = q_inv * pointInSensorCoordinates;
+
+    // The z-coordinate of the point in the world's coordinate system is the tilt-compensated height
+    double tiltCompensatedHeight = pointInWorldCoordinates.z();
+
+    // Return the compensated height
+    *data1 = tiltCompensatedHeight;
     *data2 = 0;//sensors[1].readRangeContinuousMillimeters();
 
   #endif //VL53L0X_ADDRESS

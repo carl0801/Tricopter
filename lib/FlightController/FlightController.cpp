@@ -53,12 +53,11 @@ FlightController::FlightController(double dt) : dt(dt),
     TransControlY(6,0,0, dt),
     TransControlZ(2,0,0, dt),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
-    //pquad((Eigen::Vector3d(0.1, 10, 1)).asDiagonal()),
-    pquad((Eigen::Vector3d(0.1, 1, 1)).asDiagonal()),
+    pquad((Eigen::Vector3d(0.1, 1, 0.1)).asDiagonal()),
     //iden is a 3x3 identity matrix * 0.01
-    pquad2(Eigen::Matrix3d::Identity() * 0.01),
-    //3119363164318645 wheight
-    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 6.769e-6, 7.295e-8),
+    pquad2((Eigen::Vector3d(0.01, 0.01, 0.01)).asDiagonal()),
+    
+    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 6.769e-6, 7.295e-9),
     //  1                                                               2                                                   3                                                 4                                         5                           6        
     M((Eigen::Matrix<double, 6, 6>() << 
         -std::sqrt(3)/(3*drone.k_t),                                    1/(3*drone.k_t),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
@@ -90,7 +89,8 @@ motorData FlightController::calculate(double yawOffset) {
     imu.getAngularVelocity(&angular_velocity[0], &angular_velocity[1], &angular_velocity[2]); //get the current angular velocity
     x = 0.0;
     y = 0.0;
-    z /= 1000;
+    //z /= 1000;
+    z = 0.0;
 
 
     yaw -= yawOffset;

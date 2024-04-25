@@ -34,7 +34,7 @@ motorData motorValues;
 double x = 0;
 double y = 0;
 double emils_z = 0;
-
+bool kill_switch = false;
 
 
 
@@ -68,12 +68,12 @@ void processCommand(const char command) {
       //updateESC3(z);
       break;
     case 'm':
-      if (run == false){
         run = true;
-      }
+        kill_switch = false;
       break;
     case 'l':
       run = false;
+      kill_switch = true;
       break;
     default:
       break;
@@ -100,14 +100,23 @@ void updateMotor(motorData motorValues) {
   motorValues.alpha_3 = constrain(motorValues.alpha_3*180/M_PI + 90, 30, 150);
 
 
-  /* esc1.write(motorValues.omega_1);
-  esc2.write(motorValues.omega_2);
-  esc3.write(motorValues.omega_3); */
+  /* motorValues.alpha_1 = map(motorValues.alpha_1, 0, 180, 500, 2500);
+  motorValues.alpha_2 = map(motorValues.alpha_2, 0, 180, 500, 2500);
+  motorValues.alpha_3 = map(motorValues.alpha_3, 0, 180, 500, 2500); */
+
+
+  esc1.write(motorValues.omega_1*0.7);
+  esc2.write(motorValues.omega_2*0.7);
+  esc3.write(motorValues.omega_3*0.7);
 
   
-  servo1.write(ceil(motorValues.alpha_1));
-  servo2.write(ceil(motorValues.alpha_2));
-  servo3.write(ceil(motorValues.alpha_3));
+  /* servo1.writeMicroseconds(motorValues.alpha_1);
+  servo2.writeMicroseconds(motorValues.alpha_2);
+  servo3.writeMicroseconds(motorValues.alpha_3); */
+
+  servo1.write(motorValues.alpha_1);
+  servo2.write(motorValues.alpha_2);
+  servo3.write(motorValues.alpha_3);
  
 
 
@@ -120,17 +129,25 @@ void control(double yawOffset){
   //motorData data = flightController.getMotorData();
   updateMotor(flightController.calculate(double(yawOffset)));
 }
-
+double voltage;
 void com(){
+  bool anyClientConnected = false;  // Flag to track if any client is connected
+
   for (int i = 0; i < maxClients; i++) {
     if (!clients[i] || !clients[i].connected()) {
       clients[i] = server.available();
       if (clients[i]) {
         Serial.println("New client connected");
-        clients[i].println("Welcome to the server!");
+        //clients[i].println("Welcome to the server!");
       }
+    } else {
+      anyClientConnected = true;  // Set the flag if any client is connected
     }
   }
+
+  // Update run variable based on client connection status
+  run = anyClientConnected;
+
   // Handle client messages
   for (int i = 0; i < maxClients; i++) {
     if (clients[i] && clients[i].connected() && clients[i].available()) {
@@ -142,22 +159,22 @@ void com(){
       char c = message[0];
       if (sizeof(c)  == 1){
           processCommand(c); // Process the received command
-        }
+      }
     }
   }
   int pos[3]={x,y,emils_z};
   
-  clients[0].print("x: "); clients[0].print(pos[0]); clients[0].print(" y: "); clients[0].print(pos[1]); clients[0].print("z: "); clients[0].println(pos[2]);
-  clients[1].print("x: "); clients[1].print(pos[0]); clients[1].print(" y: "); clients[1].print(pos[1]); clients[1].print("z: "); clients[1].println(pos[2]);
-  clients[2].print("x: "); clients[2].print(pos[0]); clients[2].print(" y: "); clients[2].print(pos[1]); clients[2].print("z: "); clients[2].println(pos[2]);
-  clients[3].print("x: "); clients[3].print(pos[0]); clients[3].print(" y: "); clients[3].print(pos[1]); clients[3].print("z: "); clients[3].println(pos[2]);
+  clients[0].print("x: "); clients[0].print(voltage); clients[0].print(" y: "); clients[0].print(pos[1]); clients[0].print("z: "); clients[0].println(pos[2]);
+  clients[1].print("x: "); clients[1].print(voltage); clients[1].print(" y: "); clients[1].print(pos[1]); clients[1].print("z: "); clients[1].println(pos[2]);
+  clients[2].print("x: "); clients[2].print(voltage); clients[2].print(" y: "); clients[2].print(pos[1]); clients[2].print("z: "); clients[2].println(pos[2]);
+  clients[3].print("x: "); clients[3].print(voltage); clients[3].print(" y: "); clients[3].print(pos[1]); clients[3].print("z: "); clients[3].println(pos[2]);
   clients[4].print("x: "); clients[4].print(pos[0]); clients[4].print(" y: "); clients[4].print(pos[1]); clients[4].print("z: "); clients[4].println(pos[2]);
   //Serial.print(x);
   
   
 }
 
-double voltage;
+
 //float realVoltage;
 
 double getBatteryVoltage(){
@@ -189,13 +206,14 @@ void comTask(void *pvParameters) {
 
 
 void controlTask(void *pvParameters) {
+  while (true){
   unsigned long startTime;
   unsigned long endTime;
   double yawOffset = 0;
   double placeholder = 0;
   double placeholder2 = 0;
   imu.getEulerRad(&placeholder, &placeholder2, &yawOffset);
-  while (run) {
+  while (run and !kill_switch) {
 
     startTime = millis(); // Get the current time
 
@@ -216,14 +234,16 @@ void controlTask(void *pvParameters) {
   motorValues.alpha_2 = 0;
   motorValues.alpha_3 = 0;
   updateMotor(motorValues);
-  vTaskDelete(NULL);
+  vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
+  //vTaskDelete(NULL);
+  }
 }
 
 void batteryTask(void *pvParameters) {
   while (1) {
-    if (getBatteryVoltage() < 8.7){
+    if (getBatteryVoltage() < 6.7){
       Serial.println("Battery low, shutting down");
-      //run = false;
+      kill_switch = true;
     }
     vTaskDelay(pdMS_TO_TICKS(10000)); // Delay for 10000 milliseconds aka 10 seconds
   }

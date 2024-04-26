@@ -120,7 +120,7 @@ try:
         previous_error_x = error_orientation_x
         previous_error_y = error_orientation_y
         previous_error_alti = error_altitude
-        p.resetDebugVisualizerCamera(2.0, 90.0, -10, pos)
+        p.resetDebugVisualizerCamera(1.0, 90.0, -10, pos)
 
         # Optionally, you can add a delay to visualize the simulation
         p.stepSimulation()

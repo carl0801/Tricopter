@@ -55,9 +55,9 @@ tilt_angle = 0.0
 yaw = 0.0
 yaw_control = 0.0
 yaw_error = 0.0
-kp_yaw = 0.1
+kp_yaw = 0.8
 ki_yaw = 0.0
-kd_yaw = 0.04
+kd_yaw = 0.08
 integral_yaw = 0.0
 previous_error_yaw = 0.0
 derivative_yaw = 0.0
@@ -101,10 +101,10 @@ p.addUserDebugParameter("ki_yaw", 0, 1, ki_yaw)
 p.addUserDebugParameter("kd_yaw", 0, 1, kd_yaw)
 
 
-kp_position_x = 0.01
+kp_position_x = 0.5 # 0.08
 ki_position_x = 0.000
-kd_position_x = 0.00000
-kp_position_y = 0.02
+kd_position_x = 0.00
+kp_position_y = 0.5
 ki_position_y = 0.000
 kd_position_y = 0.0000
 
@@ -142,13 +142,13 @@ try:
         derivative_position_x = (error_x - previous_error_position_x) / time_step
         derivative_position_y = (error_y - previous_error_position_y) / time_step
 
-        x_error = kp_position_x * error_x + ki_position_x * integral_position_x + kd_position_x * derivative_position_x
-        y_error = kp_position_y * error_y + ki_position_y * integral_position_y + kd_position_y * derivative_position_y
+        pitch_error = kp_position_x * error_x + ki_position_x * integral_position_x + kd_position_x * derivative_position_x
+        roll_error = kp_position_y * error_y + ki_position_y * integral_position_y + kd_position_y * derivative_position_y
 
         # define dynamics for the position control
-        additional_tilt_m1 = -x_error #+ y_error
-        additional_tilt_m2 = x_error #- y_error
-        additional_tilt_m3 = 0
+        additional_tilt_m1 = pitch_error + roll_error*0.5
+        additional_tilt_m2 = -pitch_error - roll_error*0.5
+        additional_tilt_m3 = 0 - roll_error
         #print("additional_tilt_m1: ", additional_tilt_m1, "additional_tilt_m2: ", additional_tilt_m2, "additional_tilt_m3: ", additional_tilt_m3)
 
         
@@ -156,7 +156,7 @@ try:
         error_orientation_x = target_roll - roll
         error_orientation_y = target_pitch - pitch
         error_altitude = target_altitude - pos[2]  # Altitude error
-        print("error roll", error_orientation_x, "error pitch", error_orientation_y)
+        #print("error roll", error_orientation_x, "error pitch", error_orientation_y)
         #print("roll:", roll, "pitch:", pitch, "yaw:", yaw)
         # Calculate errors
         error_orientation_x = target_roll - roll
@@ -169,8 +169,19 @@ try:
         #print("target_yaw: ", target_yaw, "yaw: ", yaw)
         #print("yaw_error: ", yaw_error)
         tilt_angle = (kp_yaw * yaw_error + ki_yaw * integral_yaw + kd_yaw * derivative_yaw)
+        tilt_angles = [tilt_angle+additional_tilt_m1, tilt_angle+additional_tilt_m3, tilt_angle+additional_tilt_m2]
         
-        
+        # calculate projected force
+        ver_force_1 = np.sin(tilt_angles[0])*output1
+        ver_force_2 = np.sin(tilt_angles[1])*output2
+        ver_force_3 = np.sin(tilt_angles[2])*output3
+
+        hor_force_1 = np.cos(tilt_angles[0])*output1
+        hor_force_2 = np.cos(tilt_angles[1])*output2
+        hor_force_3 = np.cos(tilt_angles[2])*output3
+
+
+
 
         # Update integral terms
         integral_x += error_orientation_x * time_step
@@ -219,7 +230,7 @@ try:
         projected_force_horisontally = np.cos(tilt_angle)*output2
         
         # Apply external force based on control inputs
-        motor_forces = [output1, output2, output3]  # Assuming 3 motors
+        motor_forces = [output1+hor_force_1, output2+hor_force_2, output3+hor_force_3]  # Assuming 3 motors
         
         #print("Motor forces:")
         #print(motor_forces)
@@ -235,9 +246,9 @@ try:
         # Set tilt angle for the wing
         #print("tilt_angle: ", tilt_angle)
 
-        tilt_angles = [tilt_angle+additional_tilt_m1, tilt_angle+additional_tilt_m3, tilt_angle+additional_tilt_m2]
+        
         #print("tilt_angles: ", tilt_angles)
-
+        print(tilt_angles[0])
         # Apply the tilt angles to all the wings
         for jointIndex, tilt_angle in zip(wing_joints, tilt_angles):
             p.setJointMotorControl2(drone_id, jointIndex, p.POSITION_CONTROL, targetPosition=tilt_angle)
@@ -251,7 +262,7 @@ try:
         previous_error_y = error_orientation_y
         previous_error_alti = error_altitude
         previous_error_yaw = yaw_error
-        p.resetDebugVisualizerCamera(1.0, 60.0, -40, pos)
+        p.resetDebugVisualizerCamera(1, 40.0, -40, pos)
         
         #show current yaw in the gui
          

@@ -113,47 +113,47 @@ class ServerCallbacks : public BLEServerCallbacks {
 
 
 
-void setupBLE() {
-  BLEDevice::init("Tricopter_FlightController");
+// void setupBLE() {
+//   BLEDevice::init("Tricopter_FlightController");
 
-  pServer = BLEDevice::createServer();
+//   pServer = BLEDevice::createServer();
 
-  // Create Services
-  BLEService* navigationService = createService(NAVIGATION_SERVICE_UUID);
-  BLEService* controlService = createService(CONTROL_SERVICE_UUID);
-  BLEService* sensorService = createService(SENSOR_SERVICE_UUID);
+//   // Create Services
+//   BLEService* navigationService = createService(NAVIGATION_SERVICE_UUID);
+//   BLEService* controlService = createService(CONTROL_SERVICE_UUID);
+//   BLEService* sensorService = createService(SENSOR_SERVICE_UUID);
 
-  // Navigation Service Characteristics
-  BLECharacteristic* positionCharacteristic = createCharacteristicRN(navigationService, POSITION_CHARACTERISTIC_UUID);
-  BLECharacteristic* orientationCharacteristic = createCharacteristicRN(navigationService, ORIENTATION_CHARACTERISTIC_UUID);
-  BLECharacteristic* linearAccelerationCharacteristic = createCharacteristicRN(navigationService, LINEAR_ACCELERATION_CHARACTERISTIC_UUID);
-  BLECharacteristic* angularAccelerationCharacteristic = createCharacteristicRN(navigationService, ANGULAR_ACCELERATION_CHARACTERISTIC_UUID);
-  BLECharacteristic* goalPositionCharacteristic = createCharacteristicRWN(navigationService, GOAL_POSITION_CHARACTERISTIC_UUID);
-  BLECharacteristic* goalOrientationCharacteristic = createCharacteristicRWN(navigationService, GOAL_ORIENTATION_CHARACTERISTIC_UUID);
+//   // Navigation Service Characteristics
+//   BLECharacteristic* positionCharacteristic = createCharacteristicRN(navigationService, POSITION_CHARACTERISTIC_UUID);
+//   BLECharacteristic* orientationCharacteristic = createCharacteristicRN(navigationService, ORIENTATION_CHARACTERISTIC_UUID);
+//   BLECharacteristic* linearAccelerationCharacteristic = createCharacteristicRN(navigationService, LINEAR_ACCELERATION_CHARACTERISTIC_UUID);
+//   BLECharacteristic* angularAccelerationCharacteristic = createCharacteristicRN(navigationService, ANGULAR_ACCELERATION_CHARACTERISTIC_UUID);
+//   BLECharacteristic* goalPositionCharacteristic = createCharacteristicRWN(navigationService, GOAL_POSITION_CHARACTERISTIC_UUID);
+//   BLECharacteristic* goalOrientationCharacteristic = createCharacteristicRWN(navigationService, GOAL_ORIENTATION_CHARACTERISTIC_UUID);
 
-  // Control Service Characteristics
-  BLECharacteristic* servoAngleCharacteristic = createCharacteristicRWN(controlService, SERVO_ANGLE_CHARACTERISTIC_UUID);
-  BLECharacteristic* motorPWMCharacteristic = createCharacteristicRWN(controlService, MOTOR_PWM_CHARACTERISTIC_UUID);
+//   // Control Service Characteristics
+//   BLECharacteristic* servoAngleCharacteristic = createCharacteristicRWN(controlService, SERVO_ANGLE_CHARACTERISTIC_UUID);
+//   BLECharacteristic* motorPWMCharacteristic = createCharacteristicRWN(controlService, MOTOR_PWM_CHARACTERISTIC_UUID);
 
-  // Sensor Service Characteristics
-  BLECharacteristic* lidarZCharacteristic = createCharacteristicRN(sensorService, LIDAR_Z_CHARACTERISTIC_UUID);
-  BLECharacteristic* lidarXYCharacteristic = createCharacteristicRN(sensorService, LIDAR_XY_CHARACTERISTIC_UUID);
-  BLECharacteristic* timeCharacteristic = createCharacteristicRN(sensorService, TIME_CHARACTERISTIC_UUID);
-  BLECharacteristic* batteryCharacteristic = createCharacteristicRN(sensorService, BATTERY_CHARACTERISTIC_UUID);
-  BLECharacteristic* powerUsageCharacteristic = createCharacteristicRN(sensorService, POWER_USAGE_CHARACTERISTIC_UUID);
+//   // Sensor Service Characteristics
+//   BLECharacteristic* lidarZCharacteristic = createCharacteristicRN(sensorService, LIDAR_Z_CHARACTERISTIC_UUID);
+//   BLECharacteristic* lidarXYCharacteristic = createCharacteristicRN(sensorService, LIDAR_XY_CHARACTERISTIC_UUID);
+//   BLECharacteristic* timeCharacteristic = createCharacteristicRN(sensorService, TIME_CHARACTERISTIC_UUID);
+//   BLECharacteristic* batteryCharacteristic = createCharacteristicRN(sensorService, BATTERY_CHARACTERISTIC_UUID);
+//   BLECharacteristic* powerUsageCharacteristic = createCharacteristicRN(sensorService, POWER_USAGE_CHARACTERISTIC_UUID);
 
-  // Set callback for characteristic write (implement the logic in CharacteristicCallbacks class)
-  CharacteristicCallbacks characteristicCallback;
-  goalPositionCharacteristic->setCallbacks(&characteristicCallback);
-  goalOrientationCharacteristic->setCallbacks(&characteristicCallback);
-  servoAngleCharacteristic->setCallbacks(&characteristicCallback);
-  motorPWMCharacteristic->setCallbacks(&characteristicCallback);
+//   // Set callback for characteristic write (implement the logic in CharacteristicCallbacks class)
+//   CharacteristicCallbacks characteristicCallback;
+//   goalPositionCharacteristic->setCallbacks(&characteristicCallback);
+//   goalOrientationCharacteristic->setCallbacks(&characteristicCallback);
+//   servoAngleCharacteristic->setCallbacks(&characteristicCallback);
+//   motorPWMCharacteristic->setCallbacks(&characteristicCallback);
 
-  // Start advertising the server
-  pServer->setCallbacks(new ServerCallbacks());
-  pServer->startAdvertising();
-  Serial.println("BLE Server started advertising");
-}
+//   // Start advertising the server
+//   pServer->setCallbacks(new ServerCallbacks());
+//   pServer->startAdvertising();
+//   Serial.println("BLE Server started advertising");
+// }
 
 // Convert 3 floats into a bytearray and notify over BLE
 void notifyFloatBLE(BLECharacteristic* pCharacteristic, const double* data) {

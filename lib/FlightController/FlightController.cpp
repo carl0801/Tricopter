@@ -125,3 +125,25 @@ motorData FlightController::calculate(double yawOffset) {
 
     return Output;
 }
+
+data FlightController::getData() {
+    data d;
+    d.x = x;
+    d.y = y;
+    d.z = z;
+    d.yaw = yaw;
+    d.roll = roll;
+    d.pitch = pitch;
+    d.w = w;
+    d.qx = qx;
+    d.qy = qy;
+    d.qz = qz;
+    d.lidar2 = lidar2;
+    d.omega_1 = Output.omega_1;
+    d.omega_2 = Output.omega_2;
+    d.omega_3 = Output.omega_3;
+    d.alpha_1 = Output.alpha_1;
+    d.alpha_2 = Output.alpha_2;
+    d.alpha_3 = Output.alpha_3;
+    return d;
+}

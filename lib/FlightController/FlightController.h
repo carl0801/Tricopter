@@ -8,7 +8,25 @@
 #include <ESP32PWM.h>
 #include <ArduinoEigen.h>
 
-
+struct data {
+    double x;
+    double y;
+    double z;
+    double yaw;
+    double roll;
+    double pitch;
+    double w;
+    double qx;
+    double qy;
+    double qz;
+    double lidar2;
+    double omega_1;
+    double omega_2;
+    double omega_3;
+    double alpha_1;
+    double alpha_2;
+    double alpha_3;
+};
 
 struct motorData {
     double omega_1;
@@ -70,6 +88,8 @@ public:
     IMU imu;
 
     motorData calculate(double yawOffset);
+
+    data getData();
 private:
     double dt;
     PIDController TransControlX;

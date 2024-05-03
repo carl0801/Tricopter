@@ -117,9 +117,9 @@ void updateMotor(motorData motorValues) {
   
 
 
-  esc1.write(motorValues.omega_1*0.7);
-  esc2.write(motorValues.omega_2*0.7);
-  esc3.write(motorValues.omega_3*0.7);
+  esc1.write(motorValues.omega_1*0.5);
+  esc2.write(motorValues.omega_2*0.5);
+  esc3.write(motorValues.omega_3*0.5);
 
   
   /* servo1.writeMicroseconds(motorValues.alpha_1);
@@ -178,13 +178,15 @@ void com(){
   }
   int pos[3]={x,y,emils_z};
   
+  double roll = 0;
+  double pitch = 0;
   double yaw = 0;
-  imu.getYaw(&yaw);
+  imu.getEulerRad(&roll, &pitch, &yaw);
 
-  clients[0].print("x: "); clients[0].print(voltage); clients[0].print(" y: "); clients[0].print(motorValues.alpha_1); clients[0].print("z: "); clients[0].println(yaw);
-  clients[1].print("x: "); clients[1].print(voltage); clients[1].print(" y: "); clients[1].print(motorValues.alpha_1); clients[1].print("z: "); clients[1].println(yaw);
-  clients[2].print("x: "); clients[2].print(voltage); clients[2].print(" y: "); clients[2].print(motorValues.alpha_1); clients[2].print("z: "); clients[2].println(yaw);
-  clients[3].print("x: "); clients[3].print(voltage); clients[3].print(" y: "); clients[3].print(motorValues.alpha_1); clients[3].print("z: "); clients[3].println(yaw);
+  clients[0].print("x: "); clients[0].print(voltage); clients[0].print(" r: "); clients[0].print(roll*180/M_PI); clients[0].print("p: "); clients[0].println(pitch*180/M_PI);
+  clients[1].print("x: "); clients[1].print(voltage); clients[1].print(" r: "); clients[1].print(roll*180/M_PI); clients[1].print("p: "); clients[1].println(pitch*180/M_PI);
+  clients[2].print("x: "); clients[2].print(voltage); clients[2].print(" r: "); clients[2].print(roll*180/M_PI); clients[2].print("p: "); clients[2].println(pitch*180/M_PI);
+  clients[3].print("x: "); clients[3].print(voltage); clients[3].print(" r: "); clients[3].print(roll*180/M_PI); clients[3].print("p: "); clients[3].println(pitch*180/M_PI);
   clients[4].print("x: "); clients[4].print(pos[0]); clients[4].print(" y: "); clients[4].print(pos[1]); clients[4].print("z: "); clients[4].println(pos[2]);
   //Serial.print(x);
   
@@ -241,6 +243,7 @@ void controlTask(void *pvParameters) {
 
     vTaskDelay(pdMS_TO_TICKS(STEP_TIME)); // Delay for STEP_TIME milliseconds
   }
+  imu.update_IMU();
   motorValues.omega_1 = 0.0;
   motorValues.omega_2 = 0.0;
   motorValues.omega_3 = 0.0;

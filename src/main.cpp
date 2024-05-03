@@ -6,7 +6,7 @@
 #include <IPAddress.h>
 #include "freertos/task.h"
 
-bool run = true;
+bool run = false;
 const char* ssid = "TDC-C0A4";
 const char* password = "3356f79c4";
 IPAddress local_ip(192,168,1,51);
@@ -30,6 +30,9 @@ Servo servo3;
 
 motorData motorValues;
 
+//create a vector with the values for the PID controller
+
+
 
 double x = 0;
 double y = 0;
@@ -44,19 +47,20 @@ WiFiClient clients[maxClients]; // Array to hold the client instances
 void processCommand(const char command) {
   switch (command) {
     case 'w':
-      y += 5;
+      //change the first value in the vector
+      y += 1;
       //updateESC1(y);
       break;
     case 's':
-      y -= 5;
+      y -= 1;
       //updateESC1(y);
       break;
     case 'a':
-      x -= 5;
+      x -= 1;
       //updateESC2(x);
       break;
     case 'd':
-      x += 5;
+      x += 1;
       //updateESC2(x);
       break;
     case 'r':
@@ -83,6 +87,7 @@ void processCommand(const char command) {
 
 FlightController flightController(STEP_TIME);
 IMU& imu = flightController.imu;
+
 void updateMotor(motorData motorValues) {
 
   //make sure the value is max 180
@@ -90,9 +95,13 @@ void updateMotor(motorData motorValues) {
   motorValues.omega_2 = std::min((motorValues.omega_2 - 182.69 ) / 843.09 * 180, 90.0);
   motorValues.omega_3 = std::min((motorValues.omega_3 - 182.69 ) / 843.09 * 180, 90.0);
 
-  //motorValues.alpha_1 = 0.0;
-  //motorValues.alpha_2 = 0.0;
-  //motorValues.alpha_3 = 0.0;
+  /* motorValues.omega_1 = 0.0;
+  motorValues.omega_2 = 0.0;
+  motorValues.omega_3 = 0.0; */
+
+  /* motorValues.alpha_1 = 0.0;
+  motorValues.alpha_2 = 0.0;
+  motorValues.alpha_3 = 0.0; */
 
   //constrain the value to be between 0 and 180
   motorValues.alpha_1 = constrain(motorValues.alpha_1*180/M_PI + 90, 30, 150);
@@ -100,9 +109,12 @@ void updateMotor(motorData motorValues) {
   motorValues.alpha_3 = constrain(motorValues.alpha_3*180/M_PI + 90, 30, 150);
 
 
+
   /* motorValues.alpha_1 = map(motorValues.alpha_1, 0, 180, 500, 2500);
   motorValues.alpha_2 = map(motorValues.alpha_2, 0, 180, 500, 2500);
   motorValues.alpha_3 = map(motorValues.alpha_3, 0, 180, 500, 2500); */
+
+  
 
 
   esc1.write(motorValues.omega_1*0.7);
@@ -114,9 +126,9 @@ void updateMotor(motorData motorValues) {
   servo2.writeMicroseconds(motorValues.alpha_2);
   servo3.writeMicroseconds(motorValues.alpha_3); */
 
-  servo1.write(motorValues.alpha_1);
-  servo2.write(motorValues.alpha_2);
-  servo3.write(motorValues.alpha_3);
+  servo1.write(ceil(motorValues.alpha_1));
+  servo2.write(ceil(motorValues.alpha_2));
+  servo3.write(ceil(motorValues.alpha_3));
  
 
 
@@ -129,6 +141,7 @@ void control(double yawOffset){
   //motorData data = flightController.getMotorData();
   updateMotor(flightController.calculate(double(yawOffset)));
 }
+
 double voltage;
 void com(){
   bool anyClientConnected = false;  // Flag to track if any client is connected
@@ -137,7 +150,7 @@ void com(){
     if (!clients[i] || !clients[i].connected()) {
       clients[i] = server.available();
       if (clients[i]) {
-        Serial.println("New client connected");
+        //Serial.println("New client connected");
         //clients[i].println("Welcome to the server!");
       }
     } else {
@@ -147,15 +160,16 @@ void com(){
 
   // Update run variable based on client connection status
   run = anyClientConnected;
+  //run = true;
 
   // Handle client messages
   for (int i = 0; i < maxClients; i++) {
     if (clients[i] && clients[i].connected() && clients[i].available()) {
       String message = clients[i].readStringUntil('\n');
-      Serial.print("Client ");
-      Serial.print(i);
-      Serial.print(" sent: ");
-      Serial.println(message);
+      //Serial.print("Client ");
+      //Serial.print(i);
+      //Serial.print(" sent: ");
+      //Serial.println(message);
       char c = message[0];
       if (sizeof(c)  == 1){
           processCommand(c); // Process the received command
@@ -164,10 +178,13 @@ void com(){
   }
   int pos[3]={x,y,emils_z};
   
-  clients[0].print("x: "); clients[0].print(voltage); clients[0].print(" y: "); clients[0].print(pos[1]); clients[0].print("z: "); clients[0].println(pos[2]);
-  clients[1].print("x: "); clients[1].print(voltage); clients[1].print(" y: "); clients[1].print(pos[1]); clients[1].print("z: "); clients[1].println(pos[2]);
-  clients[2].print("x: "); clients[2].print(voltage); clients[2].print(" y: "); clients[2].print(pos[1]); clients[2].print("z: "); clients[2].println(pos[2]);
-  clients[3].print("x: "); clients[3].print(voltage); clients[3].print(" y: "); clients[3].print(pos[1]); clients[3].print("z: "); clients[3].println(pos[2]);
+  double yaw = 0;
+  imu.getYaw(&yaw);
+
+  clients[0].print("x: "); clients[0].print(voltage); clients[0].print(" y: "); clients[0].print(motorValues.alpha_1); clients[0].print("z: "); clients[0].println(yaw);
+  clients[1].print("x: "); clients[1].print(voltage); clients[1].print(" y: "); clients[1].print(motorValues.alpha_1); clients[1].print("z: "); clients[1].println(yaw);
+  clients[2].print("x: "); clients[2].print(voltage); clients[2].print(" y: "); clients[2].print(motorValues.alpha_1); clients[2].print("z: "); clients[2].println(yaw);
+  clients[3].print("x: "); clients[3].print(voltage); clients[3].print(" y: "); clients[3].print(motorValues.alpha_1); clients[3].print("z: "); clients[3].println(yaw);
   clients[4].print("x: "); clients[4].print(pos[0]); clients[4].print(" y: "); clients[4].print(pos[1]); clients[4].print("z: "); clients[4].println(pos[2]);
   //Serial.print(x);
   
@@ -202,9 +219,6 @@ void comTask(void *pvParameters) {
   vTaskDelete(NULL);
 }
 
-
-
-
 void controlTask(void *pvParameters) {
   while (true){
   unsigned long startTime;
@@ -212,7 +226,7 @@ void controlTask(void *pvParameters) {
   double yawOffset = 0;
   double placeholder = 0;
   double placeholder2 = 0;
-  imu.getEulerRad(&placeholder, &placeholder2, &yawOffset);
+  imu.getYaw(&yawOffset);
   while (run and !kill_switch) {
 
     startTime = millis(); // Get the current time
@@ -227,12 +241,12 @@ void controlTask(void *pvParameters) {
 
     vTaskDelay(pdMS_TO_TICKS(STEP_TIME)); // Delay for STEP_TIME milliseconds
   }
-  motorValues.omega_1 = 0;
-  motorValues.omega_2 = 0;
-  motorValues.omega_3 = 0;
-  motorValues.alpha_1 = 0;
-  motorValues.alpha_2 = 0;
-  motorValues.alpha_3 = 0;
+  motorValues.omega_1 = 0.0;
+  motorValues.omega_2 = 0.0;
+  motorValues.omega_3 = 0.0;
+  motorValues.alpha_1 = 0.0;
+  motorValues.alpha_2 = 0.0;
+  motorValues.alpha_3 = 0.0;
   updateMotor(motorValues);
   vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
   //vTaskDelete(NULL);
@@ -242,7 +256,7 @@ void controlTask(void *pvParameters) {
 void batteryTask(void *pvParameters) {
   while (1) {
     if (getBatteryVoltage() < 6.7){
-      Serial.println("Battery low, shutting down");
+      //Serial.println("Battery low, shutting down");
       kill_switch = true;
     }
     vTaskDelay(pdMS_TO_TICKS(10000)); // Delay for 10000 milliseconds aka 10 seconds
@@ -259,19 +273,19 @@ void setup() {
 
 
   delay(1000);
-  Serial.begin(115200);
+  Serial.begin(1000000);
 
   WiFi.config(local_ip, gateway, subnet);
-  Serial.println("Connecting to WiFi...");
+  //Serial.println("Connecting to WiFi...");
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
-    Serial.println("Trying to connect to wifi...");
+    //Serial.println("Trying to connect to wifi...");
   }
-  Serial.println("Connected to WiFi");
+  //Serial.println("Connected to WiFi");
 
   server.begin();
-  Serial.println("Server started");
+  //Serial.println("Server started");
 
 
   esc1.attach(32, 1000, 2000);
@@ -291,14 +305,17 @@ void setup() {
   servo2.write(90);
   servo3.write(90);
 
-
   const int controlCore = 1;
   const int comCore = 0;
 
   // add delay to allow the ESCs to initialize
-  for (int i = 0; i < 1000; i++) {
+  double temp_yaw = 0;
+  for (int i = 0; i < (12*1000)/STEP_TIME; i++) {
     imu.update_IMU();
-    delay(10); // Delay for 10 milliseconds
+    imu.getYaw(&temp_yaw);
+    //Serial.print("yaw: ");
+    //Serial.println(temp_yaw);
+    delay(STEP_TIME); // Delay for 5 milliseconds
   }
 
   xTaskCreatePinnedToCore(
@@ -330,7 +347,7 @@ void setup() {
     NULL,            // Task handle.
     comCore                // Core where the task should run
   );
-  Serial.println("Setup done");
+  //Serial.println("Setup done");
 }
 
 void loop() {

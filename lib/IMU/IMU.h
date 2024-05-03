@@ -60,7 +60,7 @@ class IMU {
         IMU(double dt);
         void init();
         void update_IMU();
-        void sendToPC(double* data1, double* data2, double* data3);
+        void sendToPC(float* data1, float* data2, float* data3);
 
         // get data functions
         void getEulerRad(double* roll, double* pitch, double* yaw);

@@ -7,8 +7,8 @@ const FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
 const FusionVector accelerometerOffset = {0.03f, 0.0f, -0.005f};
-const FusionMatrix softIronMatrix = {0.950194, -0.023079, 0.0223308, -0.023079, 0.977227, -0.0143745, 0.0223308, -0.0143745, 0.939388}; 
-const FusionVector hardIronOffset = {-94.6133, -5.1279, 20.4048};
+const FusionMatrix softIronMatrix = {0.996121, 0.0168202, 0.00872203, 0.0168202, 0.922076, -0.0229385, 0.00872203, -0.0229385, 0.935973}; 
+const FusionVector hardIronOffset = {-50.5964, -1.31786, -44.4068};
 
 FusionVector gyroscope = {0,0,0};  
 FusionVector accelerometer = {0,0,0}; 
@@ -26,7 +26,7 @@ MPU9250 MPU(Wire, MPU9250_ADDRESS);
   const uint8_t sensorCount = 1;
 
   // The Arduino pin connected to the XSHUT pin of each sensor.
-  const uint8_t xshutPins[sensorCount] = { 4 };
+  const uint8_t xshutPins[sensorCount] = { 4 }; 
 
   VL53L0X sensors[sensorCount];
 
@@ -40,29 +40,29 @@ IMU::IMU(double dt):
 // Read data from MPU9250
 void IMU::read_sensors() {
   MPU.readSensor();
-  accel[0] = MPU.getAccelX_mss();
-  accel[1] = MPU.getAccelY_mss();
-  accel[2] = MPU.getAccelZ_mss();
+  accel[0] = MPU.getAccelY_mss();
+  accel[1] = MPU.getAccelX_mss();
+  accel[2] = -MPU.getAccelZ_mss();
 
-  magnetom[0] = MPU.getMagX_uT();
-  magnetom[1] = MPU.getMagY_uT();
-  magnetom[2] = MPU.getMagZ_uT();
+  magnetom[0] = MPU.getMagY_uT();
+  magnetom[1] = MPU.getMagX_uT();
+  magnetom[2] = -MPU.getMagZ_uT();
 
-  gyro[0] = MPU.getGyroX_rads();
-  gyro[1] = MPU.getGyroY_rads();
-  gyro[2] = MPU.getGyroZ_rads();
+  gyro[0] = MPU.getGyroY_rads();
+  gyro[1] = MPU.getGyroX_rads();
+  gyro[2] = -MPU.getGyroZ_rads();
 }
 
 // Send data to PC
-void IMU::sendToPC(double* data1, double* data2, double* data3){ 
+void IMU::sendToPC(float* data1, float* data2, float* data3){ 
 
   byte* byteData1 = (byte*)(data1);
   byte* byteData2 = (byte*)(data2);
   byte* byteData3 = (byte*)(data3);
-  byte buf[20] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
+  byte buf[12] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
                  byteData2[0], byteData2[1], byteData2[2], byteData2[3],
                  byteData3[0], byteData3[1], byteData3[2], byteData3[3]};
-  Serial.write(buf, 20);
+  Serial.write(buf, 12);
 }
 
 // Update the IMU
@@ -70,7 +70,7 @@ void IMU::update_IMU() {
 
   //Read sensor data from MPU9250
   read_sensors();
-
+  IMU::sendToPC(&magnetom[0], &magnetom[1], &magnetom[2]);
   // Calculate time since last loop
   time_now = micros();
   deltat = (double)(time_now - time_former) / 1000000.0f;
@@ -79,6 +79,8 @@ void IMU::update_IMU() {
   gyroscope = {gyro[0], gyro[1], gyro[2]};  
   accelerometer = {accel[0], accel[1], accel[2]}; 
   magnetometer = {magnetom[0], magnetom[1], magnetom[2]};
+
+
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
@@ -182,8 +184,8 @@ void IMU::init() {
       sensors[i].setTimeout(500);
       if (!sensors[i].init())
       {
-        Serial.print("Failed to detect and initialize sensor ");
-        Serial.println(i);
+        //Serial.print("Failed to detect and initialize sensor ");
+        //Serial.println(i);
         while (1);
       }
 

@@ -1,7 +1,11 @@
 {
     "files.associations": {
         "algorithm": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "iostream": "cpp",
+        "ostream": "cpp",
+        "ipmmpc_interface.h": "c"
     },
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "C_Cpp.errorSquiggles": "disabled"
 }

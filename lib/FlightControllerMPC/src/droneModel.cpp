@@ -1,6 +1,6 @@
 
 #include <cmath>
-#include "Eigen/Dense"
+#include <ArduinoEigen.h>
 
 using namespace Eigen;
 

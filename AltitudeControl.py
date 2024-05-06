@@ -17,7 +17,7 @@ p.setGravity(0, 0, gravity)
 # Load the URDF file
 planeId = p.loadURDF("plane.urdf")
 # Load URDF file
-drone_id = p.loadURDF("C:/Users/emilr/OneDrive/Documents/GitHub/Tricopter/Simulation/drone.urdf", [0, 0, 0], p.getQuaternionFromEuler([0, 0, -np.pi]))
+drone_id = p.loadURDF("Simulation\drone.urdf", [0, 0, 0], p.getQuaternionFromEuler([0, 0, -np.pi]))
 
 # Initialize variables for regulation
 integral_x = 0.0

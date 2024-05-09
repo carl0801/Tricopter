@@ -10,8 +10,8 @@ void resetTargetAngle(Eigen::Quaterniond& q, double& x, double& y, double& z) {
 }
 
 
-Tricopter::Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t, double k_d) :
-    mass(mass), l_0(l_0), gravity(gravity), drag(drag), j_x(j_x), j_y(j_y), j_z(j_z), k_t(k_t), k_d(k_d) {
+Tricopter::Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t1, double k_t2, double k_t3, double k_d) :
+    mass(mass), l_0(l_0), gravity(gravity), drag(drag), j_x(j_x), j_y(j_y), j_z(j_z), k_t1(k_t1), k_t2(k_t2), k_t3(k_t3), k_d(k_d) {
         //take the abs value of the sin function to get the length of the arms
         l_1 = abs(sin(60 * M_PI / 180) * l_0);
         l_2 = abs(cos(60 * M_PI / 180) * l_0);
@@ -57,15 +57,15 @@ FlightController::FlightController(double dt) : dt(dt),
     //iden is a 3x3 identity matrix * 0.01
     pquad2((Eigen::Vector3d(0.4, 0.3, 0.5)).asDiagonal()), //0.01, 0.01, 0.5
     
-    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 6.769e-6, 7.295e-8), //6.769e-6 7.295e-8
-    //  1                                                               2                                                   3                                                 4                                         5                           6        
+    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0004,0.0003,0.0004, 7.295e-8), //6.769e-6 7.295e-8
+    //  1                                                               2                                                   3                                                 4                                         5                                6        
     M((Eigen::Matrix<double, 6, 6>() << 
-        -std::sqrt(3)/(3*drone.k_t),                                    1/(3*drone.k_t),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
-        std::sqrt(3)/(3*drone.k_t),                                     1/(3*drone.k_t),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
-        0,                                                              -2/(3*drone.k_t),                                   -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
-        (drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t,2)*drone.l_0),   -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),     -1/(3*drone.k_t),                                 -std::sqrt(3)/(3*drone.l_0*drone.k_t),    1/(3*drone.l_0*drone.k_t),  0,
-        -(drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t,2)*drone.l_0),  -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),     -1/(3*drone.k_t),                                 std::sqrt(3)/(3*drone.l_0*drone.k_t),     1/(3*drone.l_0*drone.k_t),  0,
-        0,                                                              (2*drone.k_d)/(3*drone.l_0*std::pow(drone.k_t,2)),  -1/(3*drone.k_t),                                 0,                                        -2/(3*drone.l_0*drone.k_t), 0).finished()),
+        -std::sqrt(3)/(3*drone.k_t1),                                    1/(3*drone.k_t2),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        std::sqrt(3)/(3*drone.k_t1),                                     1/(3*drone.k_t2),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        0,                                                              -2/(3*drone.k_t2),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        (drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t1,2)*drone.l_0),   -drone.k_d/(3*drone.l_0*std::pow(drone.k_t2,2)),     -1/(3*drone.k_t3),                                 -std::sqrt(3)/(3*drone.l_0*drone.k_t1),    1/(3*drone.l_0*drone.k_t2),  0,
+        -(drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t1,2)*drone.l_0),  -drone.k_d/(3*drone.l_0*std::pow(drone.k_t2,2)),     -1/(3*drone.k_t3),                                 std::sqrt(3)/(3*drone.l_0*drone.k_t1),     1/(3*drone.l_0*drone.k_t2),  0,
+        0,                                                              (2*drone.k_d)/(3*drone.l_0*std::pow(drone.k_t2,2)),  -1/(3*drone.k_t3),                                 0,                                        -2/(3*drone.l_0*drone.k_t2),   0).finished()),
     target_x(0),
     target_y(0),
     target_z(0),

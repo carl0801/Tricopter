@@ -40,16 +40,16 @@ IMU::IMU(double dt):
 // Read data from MPU9250
 void IMU::read_sensors() {
   MPU.readSensor();
-  accel[0] = MPU.getAccelX_mss();
-  accel[1] = MPU.getAccelY_mss();
+  accel[0] = MPU.getAccelY_mss();
+  accel[1] = MPU.getAccelX_mss();
   accel[2] = -MPU.getAccelZ_mss();
 
-  magnetom[0] = MPU.getMagX_uT();
-  magnetom[1] = MPU.getMagY_uT();
+  magnetom[0] = MPU.getMagY_uT();
+  magnetom[1] = MPU.getMagX_uT();
   magnetom[2] = -MPU.getMagZ_uT();
 
-  gyro[0] = MPU.getGyroX_rads();
-  gyro[1] = MPU.getGyroY_rads();
+  gyro[0] = MPU.getGyroY_rads();
+  gyro[1] = MPU.getGyroX_rads();
   gyro[2] = -MPU.getGyroZ_rads();
 }
 
@@ -70,7 +70,7 @@ void IMU::update_IMU() {
 
   //Read sensor data from MPU9250
   read_sensors();
-  IMU::sendToPC(&magnetom[0], &magnetom[1], &magnetom[2]);
+  //IMU::sendToPC(&magnetom[0], &magnetom[1], &magnetom[2]);
   // Calculate time since last loop
   time_now = micros();
   deltat = (double)(time_now - time_former) / 1000000.0f;

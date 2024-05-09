@@ -91,13 +91,17 @@ IMU& imu = flightController.imu;
 void updateMotor(motorData motorValues) {
 
   //make sure the value is max 180
+  // SLET NÅR VI INDFØRE PWM TIL THRUST
   motorValues.omega_1 = std::min((motorValues.omega_1 - 182.69 ) / 843.09 * 180, 90.0);
   motorValues.omega_2 = std::min((motorValues.omega_2 - 182.69 ) / 843.09 * 180, 90.0);
   motorValues.omega_3 = std::min((motorValues.omega_3 - 182.69 ) / 843.09 * 180, 90.0);
 
+
   /* motorValues.omega_1 = 0.0;
-  motorValues.omega_2 = 0.0;
+  motorValues.omega_2 = 0.0; 
   motorValues.omega_3 = 0.0; */
+
+  
 
   /* motorValues.alpha_1 = 0.0;
   motorValues.alpha_2 = 0.0;
@@ -109,17 +113,16 @@ void updateMotor(motorData motorValues) {
   motorValues.alpha_3 = constrain(motorValues.alpha_3*180/M_PI + 90, 30, 150);
 
 
+  
 
   /* motorValues.alpha_1 = map(motorValues.alpha_1, 0, 180, 500, 2500);
   motorValues.alpha_2 = map(motorValues.alpha_2, 0, 180, 500, 2500);
   motorValues.alpha_3 = map(motorValues.alpha_3, 0, 180, 500, 2500); */
 
-  
 
-
-  esc1.write(motorValues.omega_1*0.5);
-  esc2.write(motorValues.omega_2*0.5);
-  esc3.write(motorValues.omega_3*0.5);
+  esc1.write(motorValues.omega_1);
+  esc2.write(motorValues.omega_2);
+  esc3.write(motorValues.omega_3);
 
   
   /* servo1.writeMicroseconds(motorValues.alpha_1);
@@ -183,6 +186,13 @@ void com(){
   double yaw = 0;
   imu.getEulerRad(&roll, &pitch, &yaw);
 
+  Serial.print("roll: ");
+  Serial.print(roll*180/M_PI);
+  Serial.print(" pitch: ");
+  Serial.print(pitch*180/M_PI);
+  Serial.print(" yaw: ");
+  Serial.println(yaw*180/M_PI);
+
   clients[0].print("x: "); clients[0].print(voltage); clients[0].print(" r: "); clients[0].print(roll*180/M_PI); clients[0].print("p: "); clients[0].println(pitch*180/M_PI);
   clients[1].print("x: "); clients[1].print(voltage); clients[1].print(" r: "); clients[1].print(roll*180/M_PI); clients[1].print("p: "); clients[1].println(pitch*180/M_PI);
   clients[2].print("x: "); clients[2].print(voltage); clients[2].print(" r: "); clients[2].print(roll*180/M_PI); clients[2].print("p: "); clients[2].println(pitch*180/M_PI);
@@ -216,7 +226,7 @@ void comTask(void *pvParameters) {
     // Your communication task code here
     // This will run indefinitely
     com();
-    vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100 milliseconds
+    vTaskDelay(pdMS_TO_TICKS(10)); // Delay for 100 milliseconds
   }
   vTaskDelete(NULL);
 }
@@ -276,7 +286,7 @@ void setup() {
 
 
   delay(1000);
-  Serial.begin(1000000);
+  Serial.begin(115200);
 
   WiFi.config(local_ip, gateway, subnet);
   //Serial.println("Connecting to WiFi...");
@@ -292,12 +302,12 @@ void setup() {
 
 
   esc1.attach(32, 1000, 2000);
-  esc2.attach(33, 1000, 2000);
-  esc3.attach(25, 1000, 2000);
+  esc2.attach(25, 1000, 2000);
+  esc3.attach(33, 1000, 2000);
 
-  servo1.attach(14);
+  servo1.attach(26);
   servo2.attach(27);
-  servo3.attach(26);
+  servo3.attach(14);
 
 
   esc1.write(0);
@@ -307,6 +317,24 @@ void setup() {
   servo1.write(90);
   servo2.write(90);
   servo3.write(90);
+
+
+  
+
+
+
+  /* delay(2000);
+  servo1.write(115);
+  delay(2000);
+  servo2.write(115);
+  servo1.write(90);
+  delay(2000);
+  servo3.write(115);
+  servo2.write(90);
+  delay(2000);
+  servo3.write(90);
+  delay(2000); */
+
 
   const int controlCore = 1;
   const int comCore = 0;

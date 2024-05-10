@@ -10,8 +10,8 @@ void resetTargetAngle(Eigen::Quaterniond& q, double& x, double& y, double& z) {
 }
 
 
-Tricopter::Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t, double k_d) :
-    mass(mass), l_0(l_0), gravity(gravity), drag(drag), j_x(j_x), j_y(j_y), j_z(j_z), k_t(k_t), k_d(k_d) {
+Tricopter::Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t1, double k_t2, double k_t3, double k_d) :
+    mass(mass), l_0(l_0), gravity(gravity), drag(drag), j_x(j_x), j_y(j_y), j_z(j_z), k_t1(k_t1), k_t2(k_t2), k_t3(k_t3), k_d(k_d) {
         //take the abs value of the sin function to get the length of the arms
         l_1 = abs(sin(60 * M_PI / 180) * l_0);
         l_2 = abs(cos(60 * M_PI / 180) * l_0);
@@ -49,24 +49,23 @@ double PIDController::calculate(double error) {
 
 FlightController::FlightController(double dt) : dt(dt),
     imu(dt),
-    TransControlX(6,1,1, dt),
-    TransControlY(6,1,1, dt),
+    TransControlX(6,0,0, dt),
+    TransControlY(6,0,0, dt),
     TransControlZ(2,0,0, dt),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
-    //pquad((Eigen::Vector3d(0.1, 10, 1)).asDiagonal()),
-    pquad((Eigen::Vector3d(0.1, 1, 0.1)).asDiagonal()),
+    pquad((Eigen::Vector3d(1, 0.8, 0.4)).asDiagonal()), //0.3, 1, 0.3
     //iden is a 3x3 identity matrix * 0.01
-    pquad2(Eigen::Matrix3d::Identity() * 0.01),
-    //3119363164318645 wheight
-    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 6.769e-6, 7.295e-8),
-    //  1                                                               2                                                   3                                                 4                                         5                           6        
+    pquad2((Eigen::Vector3d(0.4, 0.3, 0.5)).asDiagonal()), //0.01, 0.01, 0.5
+    
+    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 0.0004,0.0003,0.0004, 7.295e-8), //6.769e-6 7.295e-8
+    //  1                                                               2                                                   3                                                 4                                         5                                6        
     M((Eigen::Matrix<double, 6, 6>() << 
-        -std::sqrt(3)/(3*drone.k_t),                                    1/(3*drone.k_t),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
-        std::sqrt(3)/(3*drone.k_t),                                     1/(3*drone.k_t),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
-        0,                                                              -2/(3*drone.k_t),                                   -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),   0,                                        0,                          1/(3*drone.l_0*drone.k_t),
-        (drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t,2)*drone.l_0),   -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),     -1/(3*drone.k_t),                                 -std::sqrt(3)/(3*drone.l_0*drone.k_t),    1/(3*drone.l_0*drone.k_t),  0,
-        -(drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t,2)*drone.l_0),  -drone.k_d/(3*drone.l_0*std::pow(drone.k_t,2)),     -1/(3*drone.k_t),                                 std::sqrt(3)/(3*drone.l_0*drone.k_t),     1/(3*drone.l_0*drone.k_t),  0,
-        0,                                                              (2*drone.k_d)/(3*drone.l_0*std::pow(drone.k_t,2)),  -1/(3*drone.k_t),                                 0,                                        -2/(3*drone.l_0*drone.k_t), 0).finished()),
+        -std::sqrt(3)/(3*drone.k_t1),                                    1/(3*drone.k_t2),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        std::sqrt(3)/(3*drone.k_t1),                                     1/(3*drone.k_t2),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        0,                                                              -2/(3*drone.k_t2),                                    -drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        (drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t1,2)*drone.l_0),   -drone.k_d/(3*drone.l_0*std::pow(drone.k_t2,2)),     -1/(3*drone.k_t3),                                 -std::sqrt(3)/(3*drone.l_0*drone.k_t1),    1/(3*drone.l_0*drone.k_t2),  0,
+        -(drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t1,2)*drone.l_0),  -drone.k_d/(3*drone.l_0*std::pow(drone.k_t2,2)),     -1/(3*drone.k_t3),                                 std::sqrt(3)/(3*drone.l_0*drone.k_t1),     1/(3*drone.l_0*drone.k_t2),  0,
+        0,                                                              (2*drone.k_d)/(3*drone.l_0*std::pow(drone.k_t2,2)),  -1/(3*drone.k_t3),                                 0,                                        -2/(3*drone.l_0*drone.k_t2),   0).finished()),
     target_x(0),
     target_y(0),
     target_z(0),
@@ -84,13 +83,21 @@ motorData FlightController::calculate(double yawOffset) {
     imu.update_IMU();
     resetTargetAngle(target_q, target_x, target_y, target_z); //makes it target 0
     imu.getQuaternians(&q.w(), &q.x(), &q.y(), &q.z()); //get the current quaternion
+    imu.getPos(&x, &y, &z); //get the current position
     imu.getEulerRad(&roll, &pitch, &yaw); //get the current yaw
+    imu.getYaw(&yaw);
     imu.getLidarData(&z,&lidar2);//get the current angle and altitude
     imu.getAngularVelocity(&angular_velocity[0], &angular_velocity[1], &angular_velocity[2]); //get the current angular velocity
-    z = 0.0;
-    y = 0.0;
     x = 0.0;
+    y = 0.0;
+    //z /= 1000;
+    z = 0.0;
+
+
+
     yaw -= yawOffset;
+
+
 
     x_error = (cos(yaw)*(target_x - x) + sin(yaw)*(target_y - y));
     U[0] = TransControlX.calculate(x_error);
@@ -107,9 +114,6 @@ motorData FlightController::calculate(double yawOffset) {
     //calculate the control input for the tricopter orientation
     U.segment<3>(3) = pquad * (quad_error.coeffs().head(3) * (quad_error.w() > 0 ? 1 : -1)) + pquad2 * angular_velocity;
     
-    Serial.print("U_roll: ");
-    Serial.println(U[3]);
-
     
     //calculate the motor speeds
     Omega = M * U;
@@ -124,3 +128,7 @@ motorData FlightController::calculate(double yawOffset) {
 
     return Output;
 }
+
+
+
+

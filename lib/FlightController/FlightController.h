@@ -27,7 +27,7 @@ void resetTargetAngle(double& yaw, double& x, double& y, double& z);
 class Tricopter {
 public:
     // Constructor
-    Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t1, double k_t2, double k_t3, double k_d);
+    Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t, double k_d);
     
     // Member variables
     double mass;
@@ -39,9 +39,7 @@ public:
     double j_x;
     double j_y;
     double j_z;
-    double k_t1;
-    double k_t2;
-    double k_t3;
+    double k_t;
     double k_d;
 };
 

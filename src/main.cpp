@@ -261,6 +261,40 @@ void setup() {
   esc2.write(0);
   esc3.write(0);
 
+<<<<<<< Updated upstream
+=======
+  servo1.write(90);
+  servo2.write(90);
+  servo3.write(90);
+
+
+  /* delay(12000);
+  esc1.write(20);
+  delay(2000);
+  esc2.write(20);
+  esc1.write(0);
+  delay(2000);
+  esc3.write(20);
+  esc2.write(0);
+  delay(2000);
+  esc3.write(0);
+  delay(30000); */
+
+
+
+  /* delay(2000);
+  servo1.write(115);
+  delay(2000);
+  servo2.write(115);
+  servo1.write(90);
+  delay(2000);
+  servo3.write(115);
+  servo2.write(90);
+  delay(2000);
+  servo3.write(90);
+  delay(2000); */
+
+>>>>>>> Stashed changes
 
   const int controlCore = 1;
   const int comCore = 0;

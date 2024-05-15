@@ -69,6 +69,11 @@ class IMU {
         void getPos(double* x, double* y, double* z);
         void getLidarData(double* data1, double* data2);
         void getAngularVelocity(double* x, double* y, double* z);
+        //a function that the list with raw magnetometer data
+        void getMagnetom(float* m1, float* m2, float* m3);
+        void getAcc(float* m1, float* m2, float* m3);
+        void getGyro(float* m1, float* m2, float* m3);
+
 
         
 };

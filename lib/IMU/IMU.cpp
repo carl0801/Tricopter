@@ -3,12 +3,12 @@
 // Define calibration (replace with actual calibration data if available)
 const FusionMatrix gyroscopeMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector gyroscopeSensitivity = {1.0f, 1.0f, 1.0f};
-const FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
+const FusionVector gyroscopeOffset = {-0.0008878f, 0.0002957f, 0.0000198f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
-const FusionVector accelerometerOffset = {0.03f, 0.0f, -0.005f};
-const FusionMatrix softIronMatrix = {0.996121, 0.0168202, 0.00872203, 0.0168202, 0.922076, -0.0229385, 0.00872203, -0.0229385, 0.935973}; 
-const FusionVector hardIronOffset = {-50.5964, -1.31786, -44.4068};
+const FusionVector accelerometerOffset = {-0.0191682f, -0.0088295f, 1-0.9966540f};
+const FusionMatrix softIronMatrix = {0.945674, -0.0249542, 0.00454416, -0.0249542, 0.949661, -0.0546805, 0.00454416, -0.0546805, 0.916728}; 
+const FusionVector hardIronOffset = {-25.6307, 27.9445, -48.1461};
 
 FusionVector gyroscope = {0,0,0};  
 FusionVector accelerometer = {0,0,0}; 
@@ -40,9 +40,9 @@ IMU::IMU(double dt):
 // Read data from MPU9250
 void IMU::read_sensors() {
   MPU.readSensor();
-  accel[0] = MPU.getAccelY_mss();
-  accel[1] = MPU.getAccelX_mss();
-  accel[2] = -MPU.getAccelZ_mss();
+  accel[0] = MPU.getAccelX_mss();
+  accel[1] = MPU.getAccelY_mss();
+  accel[2] = MPU.getAccelZ_mss();
 
   magnetom[0] = MPU.getMagY_uT();
   magnetom[1] = MPU.getMagX_uT();
@@ -50,7 +50,7 @@ void IMU::read_sensors() {
 
   gyro[0] = MPU.getGyroY_rads();
   gyro[1] = MPU.getGyroX_rads();
-  gyro[2] = -MPU.getGyroZ_rads();
+  gyro[2] = MPU.getGyroZ_rads();
 }
 
 // Send data to PC
@@ -204,7 +204,7 @@ void IMU::init() {
 
   // Set AHRS algorithm settings
   const FusionAhrsSettings settings = {
-          .convention = FusionConventionNed,
+          .convention = FusionConventionNwu,
           .gain = 0.7f,
           .gyroscopeRange = 500.0f, /* replace this with actual gyroscope range in degrees/s */
           .accelerationRejection = 10.0f,
@@ -281,3 +281,23 @@ void IMU::getAngularVelocity(double* x, double* y, double* z) {
 void IMU::getYaw(double* yaw) {
   *yaw = euler_rad[2];
 }
+
+void IMU::getMagnetom(float* m1, float* m2, float* m3) {
+  *m1 = magnetom[0];
+  *m2 = magnetom[1];
+  *m3 = magnetom[2];
+}
+
+void IMU::getAcc(float* m1, float* m2, float* m3) {
+  *m1 = accel[0];
+  *m2 = accel[1];
+  *m3 = accel[2];
+}
+
+void IMU::getGyro(float* m1, float* m2, float* m3) {
+  *m1 = gyro[0];
+  *m2 = gyro[1];
+  *m3 = gyro[2];
+}
+
+

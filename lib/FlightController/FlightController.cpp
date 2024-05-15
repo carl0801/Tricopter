@@ -10,8 +10,8 @@ void resetTargetAngle(Eigen::Quaterniond& q, double& x, double& y, double& z) {
 }
 
 
-Tricopter::Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t, double k_d) :
-    mass(mass), l_0(l_0), gravity(gravity), drag(drag), j_x(j_x), j_y(j_y), j_z(j_z), k_t(k_t), k_d(k_d) {
+Tricopter::Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t1, double k_t2, double k_t3, double k_d) :
+    mass(mass), l_0(l_0), gravity(gravity), drag(drag), j_x(j_x), j_y(j_y), j_z(j_z), k_t1(k_t1), k_t2(k_t2), k_t3(k_t3), k_d(k_d) {
         //take the abs value of the sin function to get the length of the arms
         l_1 = abs(sin(60 * M_PI / 180) * l_0);
         l_2 = abs(cos(60 * M_PI / 180) * l_0);
@@ -53,19 +53,29 @@ FlightController::FlightController(double dt) : dt(dt),
     TransControlY(6,0,0, dt),
     TransControlZ(2,0,0, dt),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
-    pquad((Eigen::Vector3d(1, 0.8, 0.4)).asDiagonal()), //0.3, 1, 0.3
+    pquad((Eigen::Vector3d(0.5, 0.5, 0.25)).asDiagonal()), //0.5, 0.5, 0.36
     //iden is a 3x3 identity matrix * 0.01
-    pquad2((Eigen::Vector3d(0.4, 0.3, 0.5)).asDiagonal()), //0.01, 0.01, 0.5
+    pquad2((Eigen::Vector3d(0.3, 0.3, 6)).asDiagonal()), //0.3, 0.3, 1
     
-    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 6.769e-6, 7.295e-8), //6.769e-6 7.295e-8
+    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 5.369e-7, 5.115e-7, 5.485e-7, 0.295e-8), //6.769e-6 7.295e-8 hh 5.8922e-6,5.4468e-6,4.914e-6, 7.295e-8 hh 6.170e-7,5.704e-7,5.146e-7, 7.295e-8
     //  1                                                          2                                                    3                                                 4                                         5                                6        
+    /* M((Eigen::Matrix<double, 6, 6>() << 
+        -std::sqrt(3)/(3*drone.k_t1),                                    1/(3*drone.k_t2),                                    drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        std::sqrt(3)/(3*drone.k_t1),                                     1/(3*drone.k_t2),                                    drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        0,                                                              -2/(3*drone.k_t2),                                    drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
+        (-drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t1,2)*drone.l_0),   drone.k_d/(3*drone.l_0*std::pow(drone.k_t2,2)),     -1/(3*drone.k_t3),                                 -std::sqrt(3)/(3*drone.l_0*drone.k_t1),    1/(3*drone.l_0*drone.k_t2),  0,
+        -(-drone.k_d*std::sqrt(3))/(3*std::pow(drone.k_t1,2)*drone.l_0),  drone.k_d/(3*drone.l_0*std::pow(drone.k_t2,2)),     -1/(3*drone.k_t3),                                 std::sqrt(3)/(3*drone.l_0*drone.k_t1),     1/(3*drone.l_0*drone.k_t2),  0,
+        0,                                                              (2*-drone.k_d)/(3*drone.l_0*std::pow(drone.k_t2,2)),  -1/(3*drone.k_t3),                                 0,                                        -2/(3*drone.l_0*drone.k_t2),   0).finished()), */
+    //  1                                           2                              3                               4                          5                           6        
     M((Eigen::Matrix<double, 6, 6>() << 
-        -std::sqrt(3)/(3),                                         1/(3),                                               -drone.k_d/(3*drone.l_0*drone.k_t),               0,                                        0,                               1/(3*drone.l_0),
-        std::sqrt(3)/(3),                                          1/(3),                                               -drone.k_d/(3*drone.l_0*drone.k_t),               0,                                        0,                               1/(3*drone.l_0),
-        0,                                                         -2/(3),                                              -drone.k_d/(3*drone.l_0*drone.k_t),               0,                                        0,                               1/(3*drone.l_0),
-        (drone.k_d*std::sqrt(3))/(3*drone.k_t*drone.l_0),          -drone.k_d/(3*drone.l_0*drone.k_t),                  -1/(3),                                          -std::sqrt(3)/(3*drone.l_0),               1/(3*drone.l_0),                 0,
-        -(drone.k_d*std::sqrt(3))/(3*drone.k_t*drone.l_0),         -drone.k_d/(3*drone.l_0*drone.k_t),                  -1/(3),                                           std::sqrt(3)/(3*drone.l_0),               1/(3*drone.l_0),                 0,
-        0,                                                         -(2*drone.k_d)/(3*drone.l_0*drone.k_t),              -1/(3),                                           0,                                       -2/(3*drone.l_0),                 0).finished()),
+    -620851.0320*sqrt(3),                      620842.8282,                  -10435.33737,                517.8940403*sqrt(3),               951.5961675,                 0.1881357355*pow(10,7),
+     651674.9707*sqrt(3),                      651672.5599,                  -10953.53399,                543.6115548*sqrt(3),               998.8504053,                 0.1974781552*pow(10,7),
+    -2.891080073*sqrt(3),                     -0.1215441177*pow(10,7),       -10214.64473,                506.9413133*sqrt(3),               931.4712531,                 0.1841569306*pow(10,7),
+     10508.23701*sqrt(3),                     -10020.28123,                  -620849.7297,               -0.1881357731*pow(10,7)*sqrt(3),    0.1881357964*pow(10,7),      297.6809031,
+    -11209.65550*sqrt(3),                     -11056.67274,                  -651670.7478,                0.1974781670*pow(10,7)*sqrt(3),    0.1974781365*pow(10,7),     -1320.294849,
+     167.4864884*sqrt(3),                      20119.19253,                  -607723.2318,                0.2593977010*sqrt(3),             -0.3683139032*pow(10,7),      939.8467427).finished()),
+
+        
     target_x(0),
     target_y(0),
     target_z(0),
@@ -119,13 +129,17 @@ motorData FlightController::calculate(double yawOffset) {
     //calculate the motor speeds
     Omega = M * U;
 
-    Output.omega_1 = std::pow(Omega(0)*Omega(0) + Omega(3)*Omega(3), 0.25);
-    Output.omega_2 = std::pow(Omega(1)*Omega(1) + Omega(4)*Omega(4), 0.25);
-    Output.omega_3 = std::pow(Omega(2)*Omega(2) + Omega(5)*Omega(5), 0.25);
+
+
+    Output.omega_1 = std::sqrt(Omega(0)*Omega(0) + Omega(3)*Omega(3));
+    Output.omega_2 = std::sqrt(Omega(1)*Omega(1) + Omega(4)*Omega(4));
+    Output.omega_3 = std::sqrt(Omega(2)*Omega(2) + Omega(5)*Omega(5));
+
 
     Output.alpha_1 = std::atan(Omega(0)/Omega(3));
     Output.alpha_2 = std::atan(Omega(1)/Omega(4));
     Output.alpha_3 = std::atan(Omega(2)/Omega(5));
+
 
     return Output;
 }

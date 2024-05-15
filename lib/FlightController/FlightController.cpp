@@ -53,11 +53,11 @@ FlightController::FlightController(double dt) : dt(dt),
     TransControlY(6,0,0, dt),
     TransControlZ(2,0,0, dt),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
-    pquad((Eigen::Vector3d(0.5, 0.5, 0.25)).asDiagonal()), //0.5, 0.5, 0.36
+    pquad((Eigen::Vector3d(0.5, 0.5, 0.2)).asDiagonal()), //0.5, 0.5, 0.36
     //iden is a 3x3 identity matrix * 0.01
-    pquad2((Eigen::Vector3d(0.3, 0.3, 6)).asDiagonal()), //0.3, 0.3, 1
+    pquad2((Eigen::Vector3d(0.3, 0.3, 5)).asDiagonal()), //0.3, 0.3, 1
     
-    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 5.369e-7, 5.115e-7, 5.485e-7, 0.295e-8), //6.769e-6 7.295e-8 hh 5.8922e-6,5.4468e-6,4.914e-6, 7.295e-8 hh 6.170e-7,5.704e-7,5.146e-7, 7.295e-8
+    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 5.369e-7, 5.115e-7, 5.485e-7, 5.295e-8), //6.769e-6 7.295e-8 hh 5.8922e-6,5.4468e-6,4.914e-6, 7.295e-8 hh 6.170e-7,5.704e-7,5.146e-7, 7.295e-8
     //  1                                                          2                                                    3                                                 4                                         5                                6        
     /* M((Eigen::Matrix<double, 6, 6>() << 
         -std::sqrt(3)/(3*drone.k_t1),                                    1/(3*drone.k_t2),                                    drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
@@ -125,6 +125,9 @@ motorData FlightController::calculate(double yawOffset) {
     //calculate the control input for the tricopter orientation
     U.segment<3>(3) = pquad * (quad_error.coeffs().head(3) * (quad_error.w() > 0 ? 1 : -1)) + pquad2 * angular_velocity;
     
+    
+
+
     
     //calculate the motor speeds
     Omega = M * U;

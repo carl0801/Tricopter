@@ -138,12 +138,12 @@ void updateMotor(motorData motorValues,double powerUp, int state = 1) {
       break;
   }
 
-  Serial.print("omega1: ");
+  /* Serial.print("omega1: ");
   Serial.print(motorValues.omega_1);
   Serial.print(" omega2: ");
   Serial.print(motorValues.omega_2);
   Serial.print(" omega3: ");
-  Serial.println(motorValues.omega_3);
+  Serial.println(motorValues.omega_3); */
 
 
   esc1.write(motorValues.omega_1*procentPower);
@@ -212,6 +212,15 @@ void com(){
   imu.getMagnetom(&m1, &m2, &m3);
   imu.getAcc(&a1, &a2, &a3);
   imu.getGyro(&g1, &g2, &g3);
+  Eigen::Quaterniond q;
+  imu.getQuaternians(&q.w(), &q.x(), &q.y(), &q.z());
+    Serial.print(q.w());
+    Serial.print(",");
+    Serial.print(q.x());
+    Serial.print(",");
+    Serial.print(q.y());
+    Serial.print(",");
+    Serial.println(q.z());
   //send the mag data to all clients
   for (int i = 0; i < maxClients; i++) {
   if (clients[i] && clients[i].connected()) {
@@ -227,6 +236,8 @@ void com(){
 
 
     
+
+
     /* clients[i].print(", a2: ");
     clients[i].print(a2);
     clients[i].print(", a3: ");
@@ -276,7 +287,7 @@ void comTask(void *pvParameters) {
     // Your communication task code here
     // This will run indefinitely
     com();
-    vTaskDelay(pdMS_TO_TICKS(10)); // Delay for 100 milliseconds
+    vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100 milliseconds
   }
   vTaskDelete(NULL);
 }

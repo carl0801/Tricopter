@@ -40,9 +40,9 @@ IMU::IMU(double dt):
 // Read data from MPU9250
 void IMU::read_sensors() {
   MPU.readSensor();
-  accel[0] = MPU.getAccelX_mss();
-  accel[1] = MPU.getAccelY_mss();
-  accel[2] = MPU.getAccelZ_mss();
+  accel[0] = MPU.getAccelY_mss();
+  accel[1] = MPU.getAccelX_mss();
+  accel[2] = -MPU.getAccelZ_mss();
 
   magnetom[0] = MPU.getMagY_uT();
   magnetom[1] = MPU.getMagX_uT();
@@ -50,7 +50,7 @@ void IMU::read_sensors() {
 
   gyro[0] = MPU.getGyroY_rads();
   gyro[1] = MPU.getGyroX_rads();
-  gyro[2] = MPU.getGyroZ_rads();
+  gyro[2] = -MPU.getGyroZ_rads();
 }
 
 // Send data to PC
@@ -205,7 +205,7 @@ void IMU::init() {
   // Set AHRS algorithm settings
   const FusionAhrsSettings settings = {
           .convention = FusionConventionNwu,
-          .gain = 0.7f,
+          .gain = 0.0f, //0.7f
           .gyroscopeRange = 500.0f, /* replace this with actual gyroscope range in degrees/s */
           .accelerationRejection = 10.0f,
           .magneticRejection = 10.0f,

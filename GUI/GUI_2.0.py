@@ -1,4 +1,4 @@
 import subprocess
 
-subprocess.Popen(["python", "send.py"])
-subprocess.Popen(["python", "recieve.py"])
+subprocess.Popen(["python", "GUI\\send.py"])
+subprocess.Popen(["python", "GUI\\recieve.py"])

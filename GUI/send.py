@@ -48,7 +48,7 @@ class SenderApplication(tk.Tk):
     #create method that starts subprocess for Record_&_visualize.py
     def start_recording(self):
         import subprocess
-        subprocess.Popen(["python", "Chill/GUI/Record_&_visualize.py"])
+        subprocess.Popen(["python", "GUI\\Record_&_visualize.py"])
 
 
     def create_key_box(self, key, x, y):

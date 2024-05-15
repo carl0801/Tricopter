@@ -34,6 +34,8 @@ class ChatReceiver(tk.Tk):
         self.receive_thread.start()
         # send a message to the server
         #self.send_message('<r><sID>STPLC_13</sID><cID>4</cID><DT>DT#2024-04-22-14:57:31</DT></r>')
+        self.num_msgs = 0
+
 
     def send_message(self, message):
         try:
@@ -49,10 +51,17 @@ class ChatReceiver(tk.Tk):
                 client_socket.connect((HOST, PORT))
                 self.connection_label.config(text="Connected")
                 while True:
-                    message = client_socket.recv(2024).decode('utf-8')
-                    current_time = time.strftime("%H:%M:%S")  # Get the current time
-                    self.message_queue.put(f"[{current_time}] {message}")  # Put received message in the queue
-                    self.process_received_messages()
+                    copy = client_socket.recv(2024).decode('utf-8')
+                    #copy = message
+                    copy = copy.replace('\n', '')
+                    with open('data.txt', 'a') as file:
+                        file.write(copy)
+                    self.num_msgs += 1
+                    if self.num_msgs % 100 == 0:
+                        print(self.num_msgs)
+                    #current_time = time.strftime("%H:%M:%S")  # Get the current time
+                    #self.message_queue.put(f"[{current_time}] {message}")  # Put received message in the queue
+                    #self.process_received_messages()
             except Exception as e:
                 print(f"Error receiving message: {e}")
                 self.connection_label.config(text="Connection failed")

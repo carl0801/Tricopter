@@ -33,42 +33,48 @@ def main():
             s.connect((HOST, PORT))
             print("Connected to ESP32")
             
+            
+            num_messages = 0
             # while connected print messages from the server
             while True:
                 msg = s.recv(1524).decode()
                 buffer += msg
                 
                 # Split the buffer into lines using 'n' as a delimiter
-                lines = buffer.split('n')
+                lines = buffer.split('\n')
                 # The last element of 'lines' might be an incomplete message, so we store it back in buffer
                 buffer = lines[-1]
                 # Process complete lines
                 for line in lines[:-1]:
                     print(line)  # Print the received line for debugging
+                    with open('data.txt', 'a') as file:
+                        file.write(buffer + '\n')
+                        num_msgs += 1
+                        if num_msgs % 100 == 0:
+                            print("Number of messages received: ", num_msgs)
+                #     # Split the received message using colon (":") as a delimiter
+                #     coordinates = line.strip().split(":")
                     
-                    # Split the received message using colon (":") as a delimiter
-                    coordinates = line.strip().split(":")
-                    
-                    # Convert the string coordinates to floats
-                    # Rotation Errors
-                    x_rot_error = float(coordinates[0])
-                    y_rot_error = float(coordinates[1])
-                    # motor speeds
-                    motor_1_speed = float(coordinates[2])
-                    motor_2_speed = float(coordinates[3])
-                    motor_3_speed = float(coordinates[4])
+                #     # Convert the string coordinates to floats
+                #     # Rotation Errors
+                #     x_rot_error = float(coordinates[0])
+                #     y_rot_error = float(coordinates[1])
+                #     # motor speeds
+                #     motor_1_speed = float(coordinates[2])
+                #     motor_2_speed = float(coordinates[3])
+                #     motor_3_speed = float(coordinates[4])
 
-                    # Append the coordinates to the points list
-                    rotation_errors.append([x_rot_error, y_rot_error])
-                    motor_speeds.append([motor_1_speed, motor_2_speed, motor_3_speed])
+                #     # Append the coordinates to the points list
+                #     rotation_errors.append([x_rot_error, y_rot_error])
+                #     motor_speeds.append([motor_1_speed, motor_2_speed, motor_3_speed])
 
                 
                 # Check if the user has pressed a key (for interrupting the loop)
                 if keyboard.is_pressed('q'):
-                    save_points_to_npz(rotation_errors)
-                    save_speeds_to_npz(motor_speeds)
-                    global visualize
-                    visualize = True
+                    #save_points_to_npz(rotation_errors)
+                    #save_speeds_to_npz(motor_speeds)
+                    #global visualize
+                    #visualize = True
                     break
 
     except Exception as e:

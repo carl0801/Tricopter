@@ -3,22 +3,25 @@
 
 #include "Fusion.h"
 #include "MPU9250.h"
-#include "ArduinoEigen.h"
 
 
-//#define SAMPLE_RATE (100) // Hz
+#define SAMPLE_RATE (100) // Hz
 #define GRAVITY 9.81f // m/s^2
 
 
 #define MPU9250_ADDRESS 0x69 // Device address when AD0 pin is connected to pin 2
 
-#define VL53L0X_CONNECT true// Device address
+//#define VL53L0X_CONNECT true// Device address
 
 
 #ifdef MPU9250_ADDRESS
 
     #include "MPU9250.h"
-    #define AD0_PIN 17 // AD0 pin is connected to pin 2
+    #define AD0_PIN 17 // AD0 pin is connected to pin 17
+    #define INT_PIN 35 // INT pin is connected to pin 12
+
+    #define I2Cclock 400000
+    #define I2Cport Wire
 
 #endif //MPU9250_ADDRESS 
 
@@ -33,7 +36,6 @@ class IMU {
     private:
         // Functions
         void read_sensors();
-        u_int SAMPLE_RATE;
 
         // Variables
         double time_now;
@@ -57,7 +59,6 @@ class IMU {
 
     public:
         // Functions
-        IMU(double dt);
         void init();
         void update_IMU();
         void sendToPC(float* data1, float* data2, float* data3);

@@ -302,7 +302,7 @@ void controlTask(void *pvParameters) {
 
   while (true){
 
-  while (run and !kill_switch) {
+  while (0/* run and !kill_switch */) {
     //updateMotor(motorValues,0,2);
     vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
     if (start == 0){

@@ -36,7 +36,7 @@ motorData motorValues;
 FlightController flightController(STEP_TIME);
 IMU& imu = flightController.imu;
 
-double procentPower = 0.5;
+double procentPower = 0.75;
 double yawOffset = 0;
 
 double x = 0;
@@ -306,7 +306,7 @@ void controlTask(void *pvParameters) {
 
   while (true){
 
-  while (0/* run and !kill_switch */) {
+  while (run and !kill_switch) {
     //updateMotor(motorValues,0,2);
     vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
     if (start == 0){
@@ -320,6 +320,7 @@ void controlTask(void *pvParameters) {
       
       vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
       imu.getQuaternians(&target_q.w(), &target_q.x(), &target_q.y(), &target_q.z());
+      imu.getYaw(&yawOffset);
       for (double powerUp = 0; powerUp < 1; powerUp += 0.005){ {
           if (run and !kill_switch){
           control(yawOffset,powerUp, 3,target_q, target_x, target_y, target_z);
@@ -330,7 +331,6 @@ void controlTask(void *pvParameters) {
       if (!run or kill_switch){
         break;    
       }
-      imu.getYaw(&yawOffset);
       
       start = 1;
     }

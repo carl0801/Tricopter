@@ -71,7 +71,7 @@ public:
     FlightController(double dt);
     IMU imu;
 
-    motorData calculate(double yawOffset);
+    motorData calculate(double yawOffset,Eigen::Quaterniond target_q, double target_x, double target_y, double target_z);
 private:
     double dt;
     PIDController TransControlX;

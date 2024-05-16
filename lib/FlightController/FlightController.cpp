@@ -90,7 +90,7 @@ FlightController::FlightController(double dt) : dt(dt),
     qz(0) {}
 
 
-motorData FlightController::calculate(double yawOffset) {
+motorData FlightController::calculate(double yawOffset,Eigen::Quaterniond target_q, double target_x, double target_y, double target_z) {
     imu.update_IMU();
     resetTargetAngle(target_q, target_x, target_y, target_z); //makes it target 0
     imu.getQuaternians(&q.w(), &q.x(), &q.y(), &q.z()); //get the current quaternion

@@ -160,9 +160,9 @@ void updateMotor(motorData motorValues,double powerUp, int state = 1) {
 
 
 
-void control(double yawOffset,double powerUp, int state){
+void control(double yawOffset,double powerUp, int state, Eigen::Quaterniond target_q, double target_x, double target_y, double target_z){
 
-  updateMotor(flightController.calculate(double(yawOffset)),powerUp,state);
+  updateMotor(flightController.calculate(double(yawOffset),target_q, target_x, target_y, target_z),powerUp,state);
 }
 
 double voltage;
@@ -299,6 +299,10 @@ void controlTask(void *pvParameters) {
   unsigned long endTime;
   double placeholder = 0;
   double placeholder2 = 0;
+  double target_x = 0;
+  double target_y = 0;
+  double target_z = 0;
+  Eigen::Quaterniond target_q;
 
   while (true){
 
@@ -313,11 +317,12 @@ void controlTask(void *pvParameters) {
       }
 
       imu.getYaw(&yawOffset);
+      
       vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
-
+      imu.getQuaternians(&target_q.w(), &target_q.x(), &target_q.y(), &target_q.z());
       for (double powerUp = 0; powerUp < 1; powerUp += 0.005){ {
           if (run and !kill_switch){
-          control(yawOffset,powerUp, 3);
+          control(yawOffset,powerUp, 3,target_q, target_x, target_y, target_z);
           vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
           }
           }
@@ -326,12 +331,13 @@ void controlTask(void *pvParameters) {
         break;    
       }
       imu.getYaw(&yawOffset);
+      
       start = 1;
     }
  
     //startTime = millis(); // Get the current time
 
-    control(yawOffset,0, 1); 
+    control(yawOffset,0, 1,target_q, target_x, target_y, target_z); 
 
     //endTime = millis(); // Get the current time again
   

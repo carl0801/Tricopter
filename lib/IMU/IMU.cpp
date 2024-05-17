@@ -29,6 +29,10 @@ MPU9250 MPU(MPU9250_ADDRESS, I2Cport, I2Cclock);
 
 #endif //VL53L0X_ADDRESS
 
+IMU::IMU(double dt): 
+  SAMPLE_RATE(static_cast<u_int>(1.0 / (dt/1000)))
+{}
+
 void IMU::sendToPC(float* data1, float* data2, float* data3)
 {
   byte* byteData1 = (byte*)(data1);

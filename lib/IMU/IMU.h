@@ -5,7 +5,7 @@
 #include "MPU9250.h"
 
 
-#define SAMPLE_RATE (100) // Hz
+//#define SAMPLE_RATE (100) // Hz
 #define GRAVITY 9.81f // m/s^2
 
 
@@ -36,7 +36,7 @@ class IMU {
     private:
         // Functions
         void read_sensors();
-
+        u_int SAMPLE_RATE;
         // Variables
         double time_now;
         double time_former;
@@ -59,6 +59,7 @@ class IMU {
 
     public:
         // Functions
+        IMU(double dt);
         void init();
         void update_IMU();
         void sendToPC(float* data1, float* data2, float* data3);

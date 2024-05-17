@@ -36,7 +36,7 @@ motorData motorValues;
 FlightController flightController(STEP_TIME);
 IMU& imu = flightController.imu;
 
-double procentPower = 0.75;
+double procentPower = 1;
 double yawOffset = 0;
 
 double x = 0;
@@ -146,6 +146,8 @@ void updateMotor(motorData motorValues,double powerUp, int state = 1) {
   Serial.println(motorValues.omega_3); */
 
 
+
+
   esc1.write(motorValues.omega_1*procentPower);
   esc2.write(motorValues.omega_2*procentPower);
   esc3.write(motorValues.omega_3*procentPower);
@@ -161,8 +163,8 @@ void updateMotor(motorData motorValues,double powerUp, int state = 1) {
 
 
 void control(double yawOffset,double powerUp, int state, Eigen::Quaterniond target_q, double target_x, double target_y, double target_z){
-
-  updateMotor(flightController.calculate(double(yawOffset),target_q, target_x, target_y, target_z),powerUp,state);
+  motorValues = flightController.calculate(yawOffset,target_q, target_x, target_y, target_z);
+  updateMotor(motorValues,powerUp,state);
 }
 
 double voltage;
@@ -212,15 +214,10 @@ void com(){
   imu.getMagnetom(&m1, &m2, &m3);
   imu.getAcc(&a1, &a2, &a3);
   imu.getGyro(&g1, &g2, &g3);
-  Eigen::Quaterniond q;
-  imu.getQuaternians(&q.w(), &q.x(), &q.y(), &q.z());
-    Serial.print(q.w());
-    Serial.print(",");
-    Serial.print(q.x());
-    Serial.print(",");
-    Serial.print(q.y());
-    Serial.print(",");
-    Serial.println(q.z());
+  
+
+
+
   //send the mag data to all clients
   for (int i = 0; i < maxClients; i++) {
   if (clients[i] && clients[i].connected()) {
@@ -228,11 +225,17 @@ void com(){
     clients[i].print(voltage);
     clients[i].print("V ");
     clients[i].print(", roll: ");
-    clients[i].println(roll*180/M_PI);
+    clients[i].println(roll);
     clients[i].print(", pitch: ");
-    clients[i].println(pitch*180/M_PI);
+    clients[i].println(pitch);
     clients[i].print(", yaw: ");
-    clients[i].println(yaw*180/M_PI);
+    clients[i].println(yaw);
+    clients[i].print(", motor1: ");
+    clients[i].print(motorValues.omega_1);
+    clients[i].print(", motor2: ");
+    clients[i].print(motorValues.omega_2);
+    clients[i].print(", motor3: ");
+    clients[i].println(motorValues.omega_3);
 
 
     
@@ -311,7 +314,7 @@ void controlTask(void *pvParameters) {
     vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
     if (start == 0){
       updateMotor(motorValues,0,2); //wait 2 seconds but still update the imu
-      for (int i = 0; i < 4000/STEP_TIME; i++) {
+      for (int i = 0; i < 5000/STEP_TIME; i++) {
         vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
         imu.update_IMU();
       }
@@ -319,8 +322,12 @@ void controlTask(void *pvParameters) {
       imu.getYaw(&yawOffset);
       
       vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
-      imu.getQuaternians(&target_q.w(), &target_q.x(), &target_q.y(), &target_q.z());
-      imu.getYaw(&yawOffset);
+      //make a target quaternion from 0 roll 0 pitch and the current yaw
+      target_q = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())  // Roll
+                    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY())  // Pitch
+                    * Eigen::AngleAxisd(yawOffset, Eigen::Vector3d::UnitZ());
+      //imu.getQuaternians(&target_q.w(), &target_q.x(), &target_q.y(), &target_q.z());
+
       for (double powerUp = 0; powerUp < 1; powerUp += 0.005){ {
           if (run and !kill_switch){
           control(yawOffset,powerUp, 3,target_q, target_x, target_y, target_z);
@@ -356,7 +363,7 @@ void controlTask(void *pvParameters) {
   motorValues.alpha_3 = 0.0;
   updateMotor(motorValues,0);
   vTaskDelay(pdMS_TO_TICKS(STEP_TIME));
-  start = 0;
+  start = 0;  
   //vTaskDelete(NULL);
   }
 }

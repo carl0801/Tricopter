@@ -53,9 +53,9 @@ FlightController::FlightController(double dt) : dt(dt),
     TransControlY(6,0,0, dt),
     TransControlZ(2,0,0, dt),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
-    pquad((Eigen::Vector3d(0.5, 0.5, 0.2)).asDiagonal()), //0.5, 0.5, 0.36
+    pquad((Eigen::Vector3d(0.25, 0.25, 0.25)).asDiagonal()), //0.5, 0.5, 0.2
     //iden is a 3x3 identity matrix * 0.01
-    pquad2((Eigen::Vector3d(0.3, 0.3, 5)).asDiagonal()), //0.3, 0.3, 1
+    pquad2((Eigen::Vector3d(5, 5, 5)).asDiagonal()), //0.3, 0.3, 1
     
     drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 5.369e-7, 5.115e-7, 5.485e-7, 5.295e-8), //6.769e-6 7.295e-8 hh 5.8922e-6,5.4468e-6,4.914e-6, 7.295e-8 hh 6.170e-7,5.704e-7,5.146e-7, 7.295e-8
     //  1                                                          2                                                    3                                                 4                                         5                                6        

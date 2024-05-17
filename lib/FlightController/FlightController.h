@@ -66,6 +66,48 @@ private:
     double derivative_filter;
 };
 
+class PIDController3D {
+public:
+    PIDController3D(double kp, double ki, double kd, double dt, double max_integral, double derivative_filter)
+        : kp(kp), ki(ki), kd(kd), dt(dt), max_integral(max_integral), derivative_filter(derivative_filter),
+          integral(Eigen::Vector3d::Zero()), prev_error(Eigen::Vector3d::Zero()), prev_derivative(Eigen::Vector3d::Zero()) {}
+
+    Eigen::Vector3d calculate(const Eigen::Vector3d& error) {
+        // Update integral term
+        integral += error * dt;
+        
+        // Anti-windup
+        for (int i = 0; i < 3; ++i) {
+            if (max_integral != 0.0) {
+                integral[i] = std::max(std::min(integral[i], max_integral), -max_integral);
+            }
+        }
+            
+        // Calculate derivative term
+        Eigen::Vector3d derivative = (error - prev_error) / dt;
+        
+        // Apply derivative filter
+        if (derivative_filter != 0.0) {
+            derivative = prev_derivative * (1 - derivative_filter) + derivative * derivative_filter;
+        }
+        
+        // Calculate PID output
+        Eigen::Vector3d output = kp * error + ki * integral + kd * derivative;
+        
+        // Update previous error and derivative
+        prev_error = error;
+        prev_derivative = derivative;
+        
+        return output;
+    }
+
+private:
+    double kp, ki, kd, dt, max_integral, derivative_filter;
+    Eigen::Vector3d integral;
+    Eigen::Vector3d prev_error;
+    Eigen::Vector3d prev_derivative;
+};
+
 class FlightController {
 public:
     FlightController(double dt);
@@ -77,6 +119,7 @@ private:
     PIDController TransControlX;
     PIDController TransControlY;
     PIDController TransControlZ;
+    PIDController3D OrientationControl;
     const Eigen::Matrix3d pquad;
     const Eigen::Matrix3d pquad2;
     //PIDController RotControlZ;
@@ -113,5 +156,8 @@ private:
     Eigen::Quaterniond quad_error;
     Eigen::Vector3d U_quad;
 };
+
+
+
 
 #endif // FLIGHTCONTROLLER_H

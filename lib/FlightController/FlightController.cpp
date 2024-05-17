@@ -9,6 +9,13 @@ void resetTargetAngle(Eigen::Quaterniond& q, double& x, double& y, double& z) {
     z = 0.0;
 }
 
+Eigen::Vector3d quaternionToVector(const Eigen::Quaterniond& q) {
+    Eigen::Vector3d q_v = q.vec();
+    double q_r = q.w();
+    double norm_q_v = q_v.norm();
+    double angle = 2 * atan2(norm_q_v, q_r);
+    return (norm_q_v > 0) ? (q_v / norm_q_v) * angle : Eigen::Vector3d(0, 0, 0);
+}
 
 Tricopter::Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t1, double k_t2, double k_t3, double k_d) :
     mass(mass), l_0(l_0), gravity(gravity), drag(drag), j_x(j_x), j_y(j_y), j_z(j_z), k_t1(k_t1), k_t2(k_t2), k_t3(k_t3), k_d(k_d) {
@@ -52,6 +59,7 @@ FlightController::FlightController(double dt) : dt(dt),
     TransControlX(6,0,0, dt),
     TransControlY(6,0,0, dt),
     TransControlZ(2,0,0, dt),
+    OrientationControl(0.1, 0.005, 0.02, dt, 10, 0.1),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
     pquad((Eigen::Vector3d(0.25, 0.25, 0.25)).asDiagonal()), //0.5, 0.5, 0.2
     //iden is a 3x3 identity matrix * 0.01
@@ -87,7 +95,8 @@ FlightController::FlightController(double dt) : dt(dt),
     w(0),
     qx(0),
     qy(0),
-    qz(0) {}
+    qz(0)
+    {};
 
 
 motorData FlightController::calculate(double yawOffset,Eigen::Quaterniond target_q, double target_x, double target_y, double target_z) {
@@ -120,19 +129,25 @@ motorData FlightController::calculate(double yawOffset,Eigen::Quaterniond target
     U[2] = TransControlZ.calculate(z_error) - drone.mass * drone.gravity;
 
     //calculate a error quaternion between q and target_q
-    quad_error = (target_q * q.inverse());
+    quad_error = target_q * q.inverse();
   
+
+
+    // Convert quaternion error to vector
+    Eigen::Vector3d error_vector = quaternionToVector(quad_error);
+
+    // Calculate the control input for the tricopter orientation using the PID controller
+    Eigen::Vector3d pid_output = OrientationControl.calculate(error_vector);
+
+    //U.segment<3>(3) = pquad * pid_output + pquad2 * angular_velocity;
+    U.segment<3>(3) = pid_output;
+
+
     //calculate the control input for the tricopter orientation
-    U.segment<3>(3) = pquad * (quad_error.coeffs().head(3) * (quad_error.w() > 0 ? 1 : -1)) + pquad2 * angular_velocity;
-    
-    
-
-
+    //U.segment<3>(3) = pquad * (quad_error.coeffs().head(3) * (quad_error.w() > 0 ? 1 : -1)) + pquad2 * angular_velocity;
     
     //calculate the motor speeds
     Omega = M * U;
-
-
 
     Output.omega_1 = std::sqrt(Omega(0)*Omega(0) + Omega(3)*Omega(3));
     Output.omega_2 = std::sqrt(Omega(1)*Omega(1) + Omega(4)*Omega(4));

@@ -36,7 +36,7 @@ motorData motorValues;
 FlightController flightController(STEP_TIME);
 IMU& imu = flightController.imu;
 
-double procentPower = 1;
+double procentPower = 0.5;
 double yawOffset = 0;
 
 double x = 0;

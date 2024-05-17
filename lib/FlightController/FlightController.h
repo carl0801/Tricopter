@@ -68,7 +68,7 @@ private:
 
 class PIDController3D {
 public:
-    PIDController3D(double kp, double ki, double kd, double dt, double max_integral, double derivative_filter)
+    PIDController3D(const Eigen::Vector3d& kp, const Eigen::Vector3d& ki, const Eigen::Vector3d& kd, double dt, const Eigen::Vector3d& max_integral, double derivative_filter)
         : kp(kp), ki(ki), kd(kd), dt(dt), max_integral(max_integral), derivative_filter(derivative_filter),
           integral(Eigen::Vector3d::Zero()), prev_error(Eigen::Vector3d::Zero()), prev_derivative(Eigen::Vector3d::Zero()) {}
 
@@ -78,8 +78,8 @@ public:
         
         // Anti-windup
         for (int i = 0; i < 3; ++i) {
-            if (max_integral != 0.0) {
-                integral[i] = std::max(std::min(integral[i], max_integral), -max_integral);
+            if (max_integral[i] != 0.0) {
+                integral[i] = std::max(std::min(integral[i], max_integral[i]), -max_integral[i]);
             }
         }
             
@@ -92,7 +92,7 @@ public:
         }
         
         // Calculate PID output
-        Eigen::Vector3d output = kp * error + ki * integral + kd * derivative;
+        Eigen::Vector3d output = kp.cwiseProduct(error) + ki.cwiseProduct(integral) + kd.cwiseProduct(derivative);
         
         // Update previous error and derivative
         prev_error = error;
@@ -102,7 +102,10 @@ public:
     }
 
 private:
-    double kp, ki, kd, dt, max_integral, derivative_filter;
+    Eigen::Vector3d kp, ki, kd;
+    double dt;
+    Eigen::Vector3d max_integral;
+    double derivative_filter;
     Eigen::Vector3d integral;
     Eigen::Vector3d prev_error;
     Eigen::Vector3d prev_derivative;

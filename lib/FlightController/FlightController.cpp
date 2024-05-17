@@ -59,13 +59,14 @@ FlightController::FlightController(double dt) : dt(dt),
     TransControlX(6,0,0, dt),
     TransControlY(6,0,0, dt),
     TransControlZ(2,0,0, dt),
-    OrientationControl(0.1, 0.005, 0.02, dt, 10, 0.1),
+    OrientationControl(Eigen::Vector3d(0.025, 0.035, 0.05), Eigen::Vector3d(0.005, 0.005, 0.005), Eigen::Vector3d(0.025, 0.03, 0.03), dt, Eigen::Vector3d(10, 10, 10), 0.1),
+    //OrientationControl(0.05, 0.005, 0.03, dt, 10, 0.1),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
     pquad((Eigen::Vector3d(0.25, 0.25, 0.25)).asDiagonal()), //0.5, 0.5, 0.2
     //iden is a 3x3 identity matrix * 0.01
     pquad2((Eigen::Vector3d(5, 5, 5)).asDiagonal()), //0.3, 0.3, 1
     
-    drone(0.479, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 5.369e-7, 5.115e-7, 5.485e-7, 5.295e-8), //6.769e-6 7.295e-8 hh 5.8922e-6,5.4468e-6,4.914e-6, 7.295e-8 hh 6.170e-7,5.704e-7,5.146e-7, 7.295e-8
+    drone(0.5, 0.33, 9.81, 0.02, 0.035, 0.035, 0.02, 5.369e-7, 5.115e-7, 5.485e-7, 5.295e-8), //6.769e-6 7.295e-8 hh 5.8922e-6,5.4468e-6,4.914e-6, 7.295e-8 hh 6.170e-7,5.704e-7,5.146e-7, 7.295e-8
     //  1                                                          2                                                    3                                                 4                                         5                                6        
     /* M((Eigen::Matrix<double, 6, 6>() << 
         -std::sqrt(3)/(3*drone.k_t1),                                    1/(3*drone.k_t2),                                    drone.k_d/(3*drone.l_0*std::pow(drone.k_t3,2)),   0,                                        0,                            1/(3*drone.l_0*drone.k_t3),
@@ -135,12 +136,19 @@ motorData FlightController::calculate(double yawOffset,Eigen::Quaterniond target
 
     // Convert quaternion error to vector
     Eigen::Vector3d error_vector = quaternionToVector(quad_error);
-
+    //error_vector = error_vector * (quad_error.w() > 0 ? 1 : -1);
     // Calculate the control input for the tricopter orientation using the PID controller
     Eigen::Vector3d pid_output = OrientationControl.calculate(error_vector);
 
     //U.segment<3>(3) = pquad * pid_output + pquad2 * angular_velocity;
     U.segment<3>(3) = pid_output;
+
+    Serial.print("U_roll: ");
+    Serial.println(U[3]);
+    Serial.print("U_pitch: ");
+    Serial.println(U[4]);
+    Serial.print("U_yaw: ");
+    Serial.println(U[5]);
 
 
     //calculate the control input for the tricopter orientation

@@ -27,7 +27,7 @@ void resetTargetAngle(double& yaw, double& x, double& y, double& z);
 class Tricopter {
 public:
     // Constructor
-    Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t, double k_d);
+    Tricopter(double mass, double l_0, double gravity, double drag, double j_x, double j_y, double j_z, double k_t1, double k_t2, double k_t3, double k_d);
     
     // Member variables
     double mass;
@@ -39,7 +39,9 @@ public:
     double j_x;
     double j_y;
     double j_z;
-    double k_t;
+    double k_t1;
+    double k_t2;
+    double k_t3;
     double k_d;
 };
 
@@ -69,7 +71,7 @@ public:
     FlightController(double dt);
     IMU imu;
 
-    motorData calculate(double yawOffset);
+    motorData calculate(double yawOffset,Eigen::Quaterniond target_q, double target_x, double target_y, double target_z);
 private:
     double dt;
     PIDController TransControlX;

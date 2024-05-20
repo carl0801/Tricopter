@@ -1,24 +1,21 @@
-#include "IMU.h"
+#include "IMU.h" 
+#include <Arduino.h> 
 
 // Define calibration (replace with actual calibration data if available)
 const FusionMatrix gyroscopeMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector gyroscopeSensitivity = {1.0f, 1.0f, 1.0f};
-const FusionVector gyroscopeOffset = {0.0f, 0.0f, 0.0f};
+const FusionVector gyroscopeOffset = {-0.0008878f, 0.0002957f, 0.0000198f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
-const FusionVector accelerometerOffset = {0.03f, 0.0f, -0.005f};
-const FusionMatrix softIronMatrix = {0.950194, -0.023079, 0.0223308, -0.023079, 0.977227, -0.0143745, 0.0223308, -0.0143745, 0.939388}; //{0.970484, -0.0013793, 0.0404112, -0.0013793, 0.98968, 0.0134713, 0.0404112, 0.0134713, 0.93159}; 
-const FusionVector hardIronOffset = {-94.6133, -5.1279, 20.4048};//{-113.612, 0.10103, 24.6554};
-
-FusionVector gyroscope = {0,0,0};  
-FusionVector accelerometer = {0,0,0}; 
-FusionVector magnetometer = {0,0,0};
+const FusionVector accelerometerOffset = {0.0f, 0.0f, 0.0f};
+const FusionMatrix softIronMatrix = {0.98678, -0.00660813, 0.0348315, -0.00660813, 0.967686, 0.0273002, 0.0348315, 0.0273002, 0.904855};
+const FusionVector hardIronOffset = {864.903, -275.123, -64.4907};
 
 // Initialise algorithms
 FusionOffset offset;
 FusionAhrs ahrs;
 
-MPU9250 MPU(Wire, MPU9250_ADDRESS);
+MPU9250 MPU(MPU9250_ADDRESS, I2Cport, I2Cclock);
 
 
 #ifdef VL53L0X_CONNECT
@@ -26,43 +23,66 @@ MPU9250 MPU(Wire, MPU9250_ADDRESS);
   const uint8_t sensorCount = 1;
 
   // The Arduino pin connected to the XSHUT pin of each sensor.
-  const uint8_t xshutPins[sensorCount] = { 4 };
+  const uint8_t xshutPins[sensorCount] = { 4 }; 
 
   VL53L0X sensors[sensorCount];
 
 #endif //VL53L0X_ADDRESS
 
-IMU::IMU(double dt):
-//static_cast it to a unsigned int
-  SAMPLE_RATE(static_cast<unsigned int>(1/(dt/1000)))
+IMU::IMU(double dt): 
+  SAMPLE_RATE(static_cast<u_int>(1.0 / (dt/1000)))
 {}
 
-// Read data from MPU9250
-void IMU::read_sensors() {
-  MPU.readSensor();
-  accel[0] = MPU.getAccelX_mss();
-  accel[1] = MPU.getAccelY_mss();
-  accel[2] = MPU.getAccelZ_mss();
-
-  magnetom[0] = MPU.getMagX_uT();
-  magnetom[1] = MPU.getMagY_uT();
-  magnetom[2] = MPU.getMagZ_uT();
-
-  gyro[0] = MPU.getGyroX_rads();
-  gyro[1] = MPU.getGyroY_rads();
-  gyro[2] = MPU.getGyroZ_rads();
-}
-
-// Send data to PC
-void IMU::sendToPC(double* data1, double* data2, double* data3){ 
-
+void IMU::sendToPC(float* data1, float* data2, float* data3)
+{
   byte* byteData1 = (byte*)(data1);
   byte* byteData2 = (byte*)(data2);
   byte* byteData3 = (byte*)(data3);
-  byte buf[20] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
+  byte buf[12] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
                  byteData2[0], byteData2[1], byteData2[2], byteData2[3],
                  byteData3[0], byteData3[1], byteData3[2], byteData3[3]};
-  Serial.write(buf, 20);
+  Serial.write(buf, 12);
+}
+
+// Read data from MPU9250
+void IMU::read_sensors() {
+
+  // If data ready bit set, all data registers have new data
+  if (MPU.readByte(MPU9250_ADDRESS, INT_STATUS) & 0x01)
+  {
+    MPU.readAccelData(MPU.accelCount);  // Read the x/y/z adc values
+
+    // Now we'll calculate the accleration value into actual g's
+    // This depends on scale being set
+    MPU.ax = (float)MPU.accelCount[0] * MPU.aRes; 
+    MPU.ay = (float)MPU.accelCount[1] * MPU.aRes; 
+    MPU.az = (float)MPU.accelCount[2] * MPU.aRes; 
+
+    MPU.readGyroData(MPU.gyroCount);  // Read the x/y/z adc values
+
+    // Calculate the gyro value into actual degrees per second
+    // This depends on scale being set
+    MPU.gx = (float)MPU.gyroCount[0] * MPU.gRes;
+    MPU.gy = (float)MPU.gyroCount[1] * MPU.gRes;
+    MPU.gz = (float)MPU.gyroCount[2] * MPU.gRes;
+
+    MPU.readMagData(MPU.magCount);  // Read the x/y/z adc values
+
+    // Calculate the magnetometer values in milliGauss
+    // Include factory calibration per data sheet and user environmental
+    // corrections
+    // Get actual magnetometer value, this depends on scale being set
+    MPU.mx = (float)MPU.magCount[0] * MPU.mRes;
+    MPU.my = (float)MPU.magCount[1] * MPU.mRes;
+    MPU.mz = (float)MPU.magCount[2] * MPU.mRes;
+
+    //sendToPC(&MPU.mx, &MPU.my, &MPU.mz);
+
+    //printf("Mag: %0.6f %0.6f %0.6f\n", MPU.mx, MPU.my, MPU.mz);
+
+  //printf("Accel: %0.6f %0.6f %0.6f Gyro: %0.6f %0.6f %0.6f Mag: %0.6f %0.6f %0.6f\n", -MPU.ax, -MPU.ay, -MPU.az, MPU.gx, MPU.gy, MPU.gz, MPU.mx, MPU.my, MPU.mz);
+  } 
+
 }
 
 // Update the IMU
@@ -70,26 +90,28 @@ void IMU::update_IMU() {
 
   //Read sensor data from MPU9250
   read_sensors();
-
+  //IMU::sendToPC(&magnetom[0], &magnetom[1], &magnetom[2]);
   // Calculate time since last loop
   time_now = micros();
   deltat = (double)(time_now - time_former) / 1000000.0f;
   time_former = time_now;
   
-  gyroscope = {gyro[0], gyro[1], gyro[2]};  
-  accelerometer = {accel[0], accel[1], accel[2]}; 
-  magnetometer = {magnetom[0], magnetom[1], magnetom[2]};
+  FusionVector gyroscope = {MPU.gx, MPU.gy, MPU.gz};    
+  FusionVector accelerometer = {MPU.ax, MPU.ay, MPU.az}; 
+  FusionVector magnetometer = {MPU.mx, MPU.my, MPU.mz};
 
   // Apply calibration
   gyroscope = FusionCalibrationInertial(gyroscope, gyroscopeMisalignment, gyroscopeSensitivity, gyroscopeOffset);
   accelerometer = FusionCalibrationInertial(accelerometer, accelerometerMisalignment, accelerometerSensitivity, accelerometerOffset);
   magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
 
+  FusionVector calmag = {magnetometer.axis.y, magnetometer.axis.x, -magnetometer.axis.z};
+
   // Update gyroscope offset correction algorithm
   gyroscope = FusionOffsetUpdate(&offset, gyroscope);
 
   // Update gyroscope AHRS algorithm
-  FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, deltat);
+  FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, calmag, deltat);
 
   // Print algorithm outputs
   const FusionQuaternion quaternion = FusionAhrsGetQuaternion(&ahrs);
@@ -106,15 +128,30 @@ void IMU::update_IMU() {
   // Angular velocity
   const FusionVector angvel = FusionVectorMultiplyScalar(FusionVectorAdd(halfGyroscope, FusionVectorMultiplyScalar(FusionVectorAdd(ahrs.halfAccelerometerFeedback, ahrs.halfMagnetometerFeedback), ahrs.rampedGain)), deltat);
 
-  // Update position every 100 iterations
-  position[0] = earth.axis.x * GRAVITY;
-  position[1] = earth.axis.y * GRAVITY;
-  position[2] = earth.axis.z * GRAVITY + 0.44f;
+  // Update acceleration
+  acceleration[0] = (earth.axis.x * GRAVITY + 0.009331);
+  acceleration[1] = (earth.axis.y * GRAVITY + 0.008373);
+  acceleration[2] = -(earth.axis.z * GRAVITY + 0.419104);
+
+  // Update velocity
+  for (int i = 0; i < 3; i++) {
+    if (acceleration[i] < 0.01 && acceleration[i] > -0.01) {
+      velocity[i] = 0.0f;
+    }
+    else {
+      velocity[i] += acceleration[i] * deltat;
+    }
+  }
+
+  // Update position
+  position[0] += velocity[0] * deltat;
+  position[1] += velocity[1] * deltat;
+  position[2] += velocity[2] * deltat;
   
   // Update euler angles
-  euler_rad[0] = (euler.angle.roll * DEG_TO_RAD);
-  euler_rad[1] = (euler.angle.pitch * DEG_TO_RAD);
-  euler_rad[2] = (euler.angle.yaw * DEG_TO_RAD) - (4.2f * DEG_TO_RAD);
+  euler_rad[0] = (euler.angle.roll);
+  euler_rad[1] = (euler.angle.pitch);
+  euler_rad[2] = (euler.angle.yaw);
 
   // Update quaternion
   quaternians[0] = quaternion.element.w;
@@ -131,19 +168,26 @@ void IMU::update_IMU() {
 
 // initialise the IMU
 void IMU::init() {
+  
+  // Set up the interrupt pin, its set as active high, push-pull
+  pinMode(INT_PIN, INPUT);
+  digitalWrite(INT_PIN, LOW);
   pinMode(AD0_PIN, OUTPUT);
   digitalWrite(AD0_PIN, HIGH);
 
-  MPU.begin();
+  Wire.begin();
+  // TWBR = 12;  // 400 kbit/sec I2C speed
 
-  // setting the accelerometer full scale range to +/-8G 
-  MPU.setAccelRange(MPU9250::ACCEL_RANGE_4G);
-  // setting the gyroscope full scale range to +/-500 deg/s
-  MPU.setGyroRange(MPU9250::GYRO_RANGE_500DPS);
-  // setting DLPF bandwidth to 20 Hz
-  MPU.setDlpfBandwidth(MPU9250::DLPF_BANDWIDTH_41HZ);
-  // setting SRD to 19 for a 50 Hz update rate
-  MPU.setSrd(9);
+  MPU.MPU9250SelfTest(MPU.selfTest);
+  MPU.calibrateMPU9250(MPU.gyroBias, MPU.accelBias);
+
+  MPU.initMPU9250();
+  MPU.initAK8963(MPU.factoryMagCalibration);
+
+  // Get sensor resolutions, only need to do this once
+  MPU.getAres();
+  MPU.getGres();
+  MPU.getMres();
   time_former = micros();
 
   #ifdef VL53L0X_CONNECT
@@ -167,8 +211,8 @@ void IMU::init() {
       sensors[i].setTimeout(500);
       if (!sensors[i].init())
       {
-        Serial.print("Failed to detect and initialize sensor ");
-        Serial.println(i);
+        //Serial.print("Failed to detect and initialize sensor ");
+        //Serial.println(i);
         while (1);
       }
 
@@ -188,8 +232,8 @@ void IMU::init() {
   // Set AHRS algorithm settings
   const FusionAhrsSettings settings = {
           .convention = FusionConventionNed,
-          .gain = 0.7f,
-          .gyroscopeRange = 500.0f, /* replace this with actual gyroscope range in degrees/s */
+          .gain = 0.5f, //0.7f
+          .gyroscopeRange = MPU.gRes * 32768.0f, /* replace this with actual gyroscope range in degrees/s */
           .accelerationRejection = 10.0f,
           .magneticRejection = 10.0f,
           .recoveryTriggerPeriod = 5 * SAMPLE_RATE, /* 5 seconds */
@@ -214,7 +258,7 @@ void IMU::getQuaternians(double* w, double* x, double* y, double* z) {
 }
 
 // Get position
-void IMU::getEarthAcceleration(double* x, double* y, double* z) {
+void IMU::getPos(double* x, double* y, double* z) {
   *x = position[0];
   *y = position[1];
   *z = position[2];
@@ -224,7 +268,30 @@ void IMU::getEarthAcceleration(double* x, double* y, double* z) {
 void IMU::getLidarData(double* data1, double* data2) {
   #ifdef VL53L0X_CONNECT
 
-    *data1 = sensors[0].readRangeContinuousMillimeters();
+    // Read the measured height from the sensor
+    uint16_t measuredHeight = sensors[0].readRangeContinuousMillimeters();
+
+    // Convert the measured height to a 3D point in the sensor's coordinate system
+    Eigen::Vector3d pointInSensorCoordinates(0, 0, measuredHeight);
+
+    // Get the current orientation quaternion
+    Eigen::Quaterniond q;
+    q.w() = quaternians[0];
+    q.x() = quaternians[1];
+    q.y() = quaternians[2];
+    q.z() = quaternians[3];
+
+    // Calculate the inverse of the current orientation quaternion
+    Eigen::Quaterniond q_inv = q.inverse();
+
+    // Rotate the point by the inverse quaternion to get the point in the world's coordinate system
+    Eigen::Vector3d pointInWorldCoordinates = q_inv * pointInSensorCoordinates;
+
+    // The z-coordinate of the point in the world's coordinate system is the tilt-compensated height
+    double tiltCompensatedHeight = pointInWorldCoordinates.z();
+
+    // Return the compensated height
+    *data1 = tiltCompensatedHeight;
     *data2 = 0;//sensors[1].readRangeContinuousMillimeters();
 
   #endif //VL53L0X_ADDRESS
@@ -232,7 +299,32 @@ void IMU::getLidarData(double* data1, double* data2) {
 
 // Get angular velocity
 void IMU::getAngularVelocity(double* x, double* y, double* z) {
-  *x = velocity[0];
-  *y = velocity[1];
-  *z = velocity[2];
+  *x = angular_velocity[0];
+  *y = angular_velocity[1];
+  *z = angular_velocity[2];
 }
+
+// Get yaw
+void IMU::getYaw(double* yaw) {
+  *yaw = euler_rad[2];
+}
+
+void IMU::getMagnetom(float* m1, float* m2, float* m3) {
+  *m1 = magnetom[0];
+  *m2 = magnetom[1];
+  *m3 = magnetom[2];
+}
+
+void IMU::getAcc(float* m1, float* m2, float* m3) {
+  *m1 = accel[0];
+  *m2 = accel[1];
+  *m3 = accel[2];
+}
+
+void IMU::getGyro(float* m1, float* m2, float* m3) {
+  *m1 = gyro[0];
+  *m2 = gyro[1];
+  *m3 = gyro[2];
+}
+
+

@@ -317,6 +317,7 @@ def tricopterSim(values=None,sim=False):
 
         U_z -= drone.mass * drone.gravity
 
+        U_z = -drone.mass * drone.gravity
 
         global_x_error = (o_target_x - x) #+ np.random.normal(0, 0.01)
         global_y_error = (o_target_y - y) #+ np.random.normal(0, 0.01)
@@ -372,7 +373,7 @@ def tricopterSim(values=None,sim=False):
         if not sim:
             #values = [0.09999804543891046,0.0999958690692744,0.10000005600889045,-8.698480525232753e-07,0.0002501605829050988,5.723843841086013e-07]
             #values = [0.10005955877587307,10.10052783472445909,1.10000975770710871,-8.701081305169817e-07,0.00026104502776980794,0]
-            values = [0.1,10,1, 0.01,0.01,0.01]
+            values = [0.1,1,1, 0.01,0.01,0.01]
         quat_p_outer = np.array([[values[0],0,0],
                                 [0, values[1], 0],
                                 [0,0,values[2]]]) 

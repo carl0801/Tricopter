@@ -1,20 +1,20 @@
 #ifndef FLIGHT_CONTROLLER_MPC_H
 #define FLIGHT_CONTROLLER_MPC_H
 
-#include <IMU.h>
+//#include <IMU.h>
 
-IMU imu;
+//IMU imu;
 
 struct motorData {
-    double omega_1;
-    double omega_2;
-    double omega_3;
-    //double alpha;
+    double force_1;
+    double force_2;
+    double force_3;
+    bool tilt;
 };
 
 class FlightController {
 public:
-    FlightController(double dt, bool spinning = false);
+    FlightController(double dt);
     motorData calculate();
 private:
     double dt;

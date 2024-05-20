@@ -1,0 +1,351 @@
+<?xml version="1.0" ?>
+<robot name="(Unsaved)">
+
+<material name="silver">
+  <color rgba="0.700 0.700 0.700 1.000"/>
+</material>
+
+<link name="base_link">
+  <inertial>
+    <origin xyz="-5.203171791501271e-05 -0.001530765508105926 0.03193794004070813" rpy="0 0 0"/>
+    <mass value="0.25021955564014492"/><!-- 150 gram -->
+    <inertia ixx="2.7898397443267e-05" iyy="2.6839184863858357e-05" izz="4.7415497348326645e-05" ixy="-1.9331467175170355e-07" iyz="-8.907983367474753e-07" ixz="-6.707279103053248e-08"/>
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_a_link1">
+  <inertial>
+    <origin xyz="0.005696771387558323 0.1748176894147221 -0.026841889403604973" rpy="0 0 0"/>
+    <mass value="0.04060892541828371"/> <!-- 40 gram -->
+    <inertia ixx="0.0007293374996617786" iyy="5.328335727308951e-05" izz="0.0006781877865775846" ixy="4.628149343887772e-06" iyz="-3.2645190726438505e-05" ixz="2.2555674462080956e-06"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.0 -0.024474 -0.030885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_a_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.0 -0.024474 -0.030885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_a_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_b_link1">
+  <inertial>
+    <origin xyz="-0.1542450514900443 -0.08247529596618804 -0.026956607960014478" rpy="0 0 0"/>
+    <mass value="0.04060892541828371"/>
+    <inertia ixx="0.00022630498777457706" iyy="0.0005563158691602919" izz="0.0006781877865775767" ixy="-0.000295054105493097" iyz="1.827597407158458e-05" ixz="2.7143780757379993e-05"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.021195 0.012237 -0.030885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_b_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.021195 0.012237 -0.030885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_b_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_c_link1">
+  <inertial>
+    <origin xyz="0.1485482801024913 -0.09234239344853429 -0.02695660796001445" rpy="0 0 0"/>
+    <mass value="0.04060892541828371"/>
+    <inertia ixx="0.000218288797965946" iyy="0.0005643320589689212" izz="0.0006781877865775811" ixy="0.0002904259561492088" iyz="1.4369216654853764e-05" ixz="-2.939934820358811e-05"/>
+  </inertial>
+  <visual>
+    <origin xyz="-0.021195 0.012237 -0.030885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_c_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="-0.021195 0.012237 -0.030885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_c_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_b_link1motor_b_link1">
+  <inertial>
+    <origin xyz="9.231066094850249e-08 1.0012905082845691e-07 0.00795175395350372" rpy="0 0 0"/>
+    <mass value="0.060164910276644738"/> <!-- 60 gram -->
+    <inertia ixx="2.8146811264972353e-07" iyy="2.814683695314519e-07" izz="2.8952392484317673e-07" ixy="-5.914301166864977e-14" iyz="2.1971828653363779e-13" ixz="6.034659669760037e-13"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.275159 0.158884 -0.039885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_b_link1motor_b_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.275159 0.158884 -0.039885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_b_link1motor_b_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_b_link1motor_b_link1prop_b_link1">
+  <inertial>
+    <origin xyz="9.743273227114102e-08 1.1455035012208903e-07 -0.0011794865606498742" rpy="0 0 0"/>
+    <mass value="0.0103131751235644734"/> <!-- 10 gram -->
+    <inertia ixx="8.978920287104207e-08" iyy="8.978945980851196e-08" izz="1.7734403043569917e-07" ixy="-5.929371577062525e-14" iyz="8.692928037015539e-15" ixz="-8.062825309750749e-15"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.275159 0.158884 -0.055585" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_b_link1motor_b_link1prop_b_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="0.275159 0.158884 -0.055585" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_b_link1motor_b_link1prop_b_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_c_link1motor_c_link1">
+  <inertial>
+    <origin xyz="-5.261474544937528e-08 3.4579893001818185e-07 0.007951753953503726" rpy="0 0 0"/>
+    <mass value="0.060164910276644738"/>
+    <inertia ixx="2.814682540917574e-07" iyy="2.8146822808963485e-07" izz="2.8952392484339357e-07" ixy="1.4080468561938897e-13" iyz="4.1275773895793275e-13" ixz="-4.920146186087812e-13"/>
+  </inertial>
+  <visual>
+    <origin xyz="-0.275177 0.158853 -0.039885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_c_link1motor_c_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="-0.275177 0.158853 -0.039885" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_c_link1motor_c_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_c_link1motor_c_link1prop_c_link1">
+  <inertial>
+    <origin xyz="-6.766499277555127e-08 3.4302412438291796e-07 -0.0011794865606498534" rpy="0 0 0"/>
+    <mass value="0.0103131751235644734"/>
+    <inertia ixx="8.978934422431366e-08" iyy="8.97893184552878e-08" izz="1.7734403043572627e-07" ixy="1.4090406630102442e-13" iyz="-1.1329072445789845e-14" ixz="-3.4968806550492865e-15"/>
+  </inertial>
+  <visual>
+    <origin xyz="-0.275177 0.158853 -0.055585" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_c_link1motor_c_link1prop_c_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="-0.275177 0.158853 -0.055585" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_c_link1motor_c_link1prop_c_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_a_link1motor_a_link1">
+  <inertial>
+    <origin xyz="-3.9695910268725866e-08 -4.459279809299055e-07 0.00795147250991321" rpy="0 0 0"/>
+    <mass value="0.060164910276644738"/>
+    <inertia ixx="2.81468356530621e-07" iyy="2.8146812565082207e-07" izz="2.8952392484339357e-07" ixy="-8.166158006243095e-14" iyz="-6.324760051627798e-13" ixz="-1.1145137661461322e-13"/>
+  </inertial>
+  <visual>
+    <origin xyz="1.8e-05 -0.317737 -0.04" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_a_link1motor_a_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="1.8e-05 -0.317737 -0.04" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_a_link1motor_a_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="wing_a_link1motor_a_link1prop_a_link1">
+  <inertial>
+    <origin xyz="-2.976773435743707e-08 -4.5757447464378487e-07 -0.0011797680042403627" rpy="0 0 0"/>
+    <mass value="0.0103131751235644734"/>
+    <inertia ixx="8.978944692408374e-08" iyy="8.978921575554907e-08" izz="1.7734403043572627e-07" ixy="-8.161035293914911e-14" iyz="2.6361562672355676e-15" ixz="1.1559706091979054e-14"/>
+  </inertial>
+  <visual>
+    <origin xyz="1.8e-05 -0.317737 -0.0557" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_a_link1motor_a_link1prop_a_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver"/>
+    <material/>
+  </visual>
+  <collision>
+    <origin xyz="1.8e-05 -0.317737 -0.0557" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="meshes/wing_a_link1motor_a_link1prop_a_link1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<joint name="Revolute_3" type="revolute">
+  <origin xyz="0.0 0.024474 0.030885" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="wing_a_link1"/>
+  <axis xyz="-0.0 1.0 0.0"/>
+  <limit upper="1.570796" lower="-1.658063" effort="100" velocity="100"/>
+</joint>
+<transmission name="Revolute_3_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_3">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_3_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_4" type="revolute">
+  <origin xyz="-0.021195 -0.012237 0.030885" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="wing_b_link1"/>
+  <axis xyz="-0.866025 -0.5 0.0"/>
+  <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+</joint>
+<transmission name="Revolute_4_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_4">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_4_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="Revolute_5" type="revolute">
+  <origin xyz="0.021195 -0.012237 0.030885" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="wing_c_link1"/>
+  <axis xyz="0.866025 -0.5 0.0"/>
+  <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+</joint>
+<transmission name="Revolute_5_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="Revolute_5">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="Revolute_5_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="wing_b_link1_Rigid 2" type="fixed">
+  <origin xyz="-0.253964 -0.146647 0.009" rpy="0 0 0"/>
+  <parent link="wing_b_link1"/>
+  <child link="wing_b_link1motor_b_link1"/>
+</joint>
+
+<joint name="wing_b_link1motor_b_link1_Revolute 8" type="continuous">
+  <origin xyz="0.0 0.0 0.0157" rpy="0 0 0"/>
+  <parent link="wing_b_link1motor_b_link1"/>
+  <child link="wing_b_link1motor_b_link1prop_b_link1"/>
+  <axis xyz="0.0 0.0 1.0"/>
+</joint>
+<transmission name="wing_b_link1motor_b_link1_Revolute 8_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="wing_b_link1motor_b_link1_Revolute 8">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="wing_b_link1motor_b_link1_Revolute 8_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="wing_c_link1_Rigid 1" type="fixed">
+  <origin xyz="0.253982 -0.146616 0.009" rpy="0 0 0"/>
+  <parent link="wing_c_link1"/>
+  <child link="wing_c_link1motor_c_link1"/>
+</joint>
+
+<joint name="wing_c_link1motor_c_link1_Revolute 9" type="continuous">
+  <origin xyz="0.0 0.0 0.0157" rpy="0 0 0"/>
+  <parent link="wing_c_link1motor_c_link1"/>
+  <child link="wing_c_link1motor_c_link1prop_c_link1"/>
+  <axis xyz="-0.0 0.0 1.0"/>
+</joint>
+<transmission name="wing_c_link1motor_c_link1_Revolute 9_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="wing_c_link1motor_c_link1_Revolute 9">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="wing_c_link1motor_c_link1_Revolute 9_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<joint name="wing_a_link1_Rigid 1" type="fixed">
+  <origin xyz="-1.8e-05 0.293263 0.009115" rpy="0 0 0"/>
+  <parent link="wing_a_link1"/>
+  <child link="wing_a_link1motor_a_link1"/>
+</joint>
+
+<joint name="wing_a_link1motor_a_link1_Revolute 7" type="continuous">
+  <origin xyz="0.0 0.0 0.0157" rpy="0 0 0"/>
+  <parent link="wing_a_link1motor_a_link1"/>
+  <child link="wing_a_link1motor_a_link1prop_a_link1"/>
+  <axis xyz="0.0 -0.0 1.0"/>
+</joint>
+<transmission name="wing_a_link1motor_a_link1_Revolute 7_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="wing_a_link1motor_a_link1_Revolute 7">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="wing_a_link1motor_a_link1_Revolute 7_actr">
+    <hardwareInterface>PositionJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+</robot>

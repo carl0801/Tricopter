@@ -12,7 +12,7 @@ VectorXf newtonSolver(Vector3f x, VectorXf s, VectorXf l,
 // Function to run the Interior Point Method for model predictive control
 Vector3f IPMMPC(Vector3f x0, Vector3f pt, 
              Vector3f p0, Vector3f v0, Vector3f w0, Matrix3f R, 
-             float xMax=7, float xMin=0, float timestep=0.3,
-             int max_iter=16, float tol=1e-3, bool debug=false);
+             float xMax=7, float xMin=0, float timestep=0.5,
+             int max_iter=18, float tol=1e-3, bool debug=false);
 
 #endif

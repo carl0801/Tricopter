@@ -1,4 +1,4 @@
-main.o: main.cpp lib/Eigen/Dense lib/Eigen/Core \
+main.o: main.cpp ipmmpc.hpp lib/Eigen/Dense lib/Eigen/Core \
  lib/Eigen/src/Core/util/DisableStupidWarnings.h \
  lib/Eigen/src/Core/util/Macros.h lib/Eigen/src/Core/util/MKL_support.h \
  lib/Eigen/src/Core/util/Constants.h lib/Eigen/src/Core/util/Meta.h \
@@ -127,4 +127,4 @@ main.o: main.cpp lib/Eigen/Dense lib/Eigen/Core \
  lib/Eigen/src/Eigenvalues/RealQZ.h \
  lib/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h \
  lib/Eigen/src/Eigenvalues/./RealQZ.h \
- lib/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h ipmmpc.hpp
+ lib/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h

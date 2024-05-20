@@ -2,8 +2,8 @@
 setlocal
 set start=%time%
 
-echo Compiling...
-mingw32-make -f Makefile
+echo Building the project...
+mingw32-make -f ./cpp/Makefile
 
 set end=%time%
 
@@ -24,7 +24,8 @@ set /a elapsed_s=(end_h*3600 + end_m*60 + end_s) - (start_h*3600 + start_m*60 + 
 echo.
 echo Elapsed time: %elapsed_s% seconds
 
-:: echo Running...
-:: main.exe
+
+echo Running the compiled executable in python simulation...
+python ./simulation/simulation.py
 
 endlocal

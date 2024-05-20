@@ -8,22 +8,10 @@ INCLUDE := -I ./lib
 SRCS := main.cpp droneModel.cpp ipmmpc.cpp
 # Object files
 OBJS := $(SRCS:.cpp=.o)
-# Object files for shared library
-LIBOBJS := ipmmpc.o droneModel.o
 # Dependency files
 DEPS := $(SRCS:.cpp=.d)
 # Executable name
 TARGET := main
-# Shared library name
-LIBRARY := libipmmpc.dll
-
-# Rule to build the executable and shared library
-all: $(LIBRARY) $(TARGET)
-
-# Rule to build the shared library
-$(LIBRARY): $(LIBOBJS)
-	@echo "Building shared library $@ from $^"
-	$(CC) $(CFLAGS) $(INCLUDE) -shared -o $@ $^
 
 # Rule to build the executable
 $(TARGET): $(OBJS)

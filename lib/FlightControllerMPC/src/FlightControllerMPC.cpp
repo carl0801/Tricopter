@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoEigen.h>
-#include "FlightController.h"
+#include "FlightControllerMPC.hpp"
 #include "ipmmpc.hpp"
 
 using namespace Eigen;
@@ -20,9 +20,10 @@ motorData FlightController::calculate() {
     // Call Interior Point Method
     Vector3f x = IPMMPC(x0, pt, p0, v0, w0, R);
     // Update motorData
-    motor.omega_1 = x(0);
-    motor.omega_2 = x(1);
-    motor.omega_3 = x(2);
+    motor.force_1 = x(0);
+    motor.force_2 = x(1);
+    motor.force_3 = x(2);
+    motor.tilt = false;
 
     return motor;
 }

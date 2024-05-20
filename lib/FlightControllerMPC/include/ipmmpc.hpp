@@ -1,7 +1,7 @@
 #ifndef IPM_MPC_HPP
 #define IPM_MPC_HPP
 
-#include <Eigen/Dense>
+#include <ArduinoEigen.h>
 using namespace Eigen;
 
 // Function to calcualte and solve matrix equation for Newton Solver

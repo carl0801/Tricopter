@@ -2,7 +2,7 @@
 #ifndef DRONE_MODEL_HPP
 #define DRONE_MODEL_HPP
 
-#include "Eigen/Dense"
+#include <ArduinoEigen.h>
 
 using namespace Eigen;
 

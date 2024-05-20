@@ -31,7 +31,7 @@ double x = 0;
 double y = 0;
 double emils_z = 0;
 
-
+int pos[3] = {0, 0, 0};
 
 
 const int maxClients = 5; // Maximum number of clients the server can handle
@@ -120,7 +120,7 @@ void control(double yawOffset){
   updateMotor(flightController.calculate(double(yawOffset)));
 }
 
-void com(){
+void com() {
   for (int i = 0; i < maxClients; i++) {
     if (!clients[i] || !clients[i].connected()) {
       clients[i] = server.available();
@@ -130,30 +130,25 @@ void com(){
       }
     }
   }
+
   // Handle client messages
   for (int i = 0; i < maxClients; i++) {
     if (clients[i] && clients[i].connected() && clients[i].available()) {
       String message = clients[i].readStringUntil('\n');
-      Serial.print("Client ");
-      Serial.print(i);
-      Serial.print(" sent: ");
-      Serial.println(message);
       char c = message[0];
-      if (sizeof(c)  == 1){
-          processCommand(c); // Process the received command
-        }
+      if (sizeof(c) == 1){
+        processCommand(c); // Process the received command
+      }
     }
   }
-  int pos[3]={x,y,emils_z};
   
-  clients[0].print("x: "); clients[0].print(pos[0]); clients[0].print(" y: "); clients[0].print(pos[1]); clients[0].print("z: "); clients[0].println(pos[2]);
-  clients[1].print("x: "); clients[1].print(pos[0]); clients[1].print(" y: "); clients[1].print(pos[1]); clients[1].print("z: "); clients[1].println(pos[2]);
-  clients[2].print("x: "); clients[2].print(pos[0]); clients[2].print(" y: "); clients[2].print(pos[1]); clients[2].print("z: "); clients[2].println(pos[2]);
-  clients[3].print("x: "); clients[3].print(pos[0]); clients[3].print(" y: "); clients[3].print(pos[1]); clients[3].print("z: "); clients[3].println(pos[2]);
-  clients[4].print("x: "); clients[4].print(pos[0]); clients[4].print(" y: "); clients[4].print(pos[1]); clients[4].print("z: "); clients[4].println(pos[2]);
-  //Serial.print(x);
-  
-  
+  String dataStr = "x: " + String(pos[0]) + " y: " + String(pos[1]) + " z: " + String(pos[2]) + "\n";
+
+  for (int i = 0; i < maxClients; i++) {
+    if (clients[i] && clients[i].connected()) {
+      clients[i].write(dataStr.c_str(), dataStr.length()); // Use write() with string length
+    }
+  }
 }
 
 double voltage;

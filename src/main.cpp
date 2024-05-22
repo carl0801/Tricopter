@@ -5,7 +5,7 @@
 #include <WiFiAP.h>
 #include <IPAddress.h>
 #include "freertos/task.h"
-
+#include <Emil.h>
 
 
 bool run = false;
@@ -35,15 +35,22 @@ motorData motorValues;
 
 FlightController flightController(STEP_TIME);
 IMU& imu = flightController.imu;
+Emil emil(imu, motorValues);
+
 
 double procentPower = 0.0;
 double yawOffset = 0;
+double pwm_offset = 20.0;
+
+double pos[3] = {0, 0, 0};
+double orientation[4] = {0, 0, 0, 0};
 
 double x = 0;
 double y = 0;
 double emils_z = 0;
 bool kill_switch = false;
 
+bool softStop = 0;
 
 
 const int maxClients = 5; // Maximum number of clients the server can handle
@@ -73,7 +80,7 @@ void processCommand(const char command) {
       //updateESC3(z);
       break;
     case 'f':
-      emils_z -= 0.1;
+      //softStop = 1;
       //updateESC3(z);
       break;
     case 'm':
@@ -81,15 +88,13 @@ void processCommand(const char command) {
         kill_switch = false;
       break;
     case 'l':
-      run = false;
       kill_switch = true;
+      run = false;
       break;
     default:
       break;
   }
 }
-
-
 
 
 void updateMotor(motorData motorValues,double powerUp, int state = 1) {
@@ -149,8 +154,8 @@ void updateMotor(motorData motorValues,double powerUp, int state = 1) {
 
 
   esc1.write(motorValues.omega_1*procentPower);
-  esc2.write(motorValues.omega_2*procentPower);
-  esc3.write(motorValues.omega_3*procentPower);
+  esc2.write(motorValues.omega_2*procentPower*1.075);
+  esc3.write(motorValues.omega_3*procentPower*0.9);
 
   servo1.write(ceil(motorValues.alpha_1));
   servo2.write(ceil(motorValues.alpha_2));
@@ -160,7 +165,19 @@ void updateMotor(motorData motorValues,double powerUp, int state = 1) {
 
 }
 
+void emilUpdateMotor(motorData motorValues) {
 
+
+  esc1.write(constrain(motorValues.omega_1,0,70));
+  esc2.write(constrain(motorValues.omega_2,0,70));
+  esc3.write(constrain(motorValues.omega_3,0,70));
+
+  servo1.write(motorValues.alpha_1);
+  servo2.write(motorValues.alpha_2);
+  servo3.write(motorValues.alpha_3);
+
+
+}
 
 void control(double yawOffset,double powerUp, int state, Eigen::Quaterniond target_q, double target_x, double target_y, double target_z){
   motorValues = flightController.calculate(yawOffset,target_q, target_x, target_y, target_z);
@@ -168,106 +185,79 @@ void control(double yawOffset,double powerUp, int state, Eigen::Quaterniond targ
 }
 
 double voltage;
-void com(){
-  bool anyClientConnected = false;  // Flag to track if any client is connected
 
-  for (int i = 0; i < maxClients; i++) {
-    if (!clients[i] || !clients[i].connected()) {
-      clients[i] = server.available();
-      if (clients[i]) {
-        //Serial.println("New client connected");
-        //clients[i].println("Welcome to the server!");
-      }
-    } else {
-      anyClientConnected = true;  // Set the flag if any client is connected
+void parseMessage(String message, double* pos, double* orientation) {
+    // Remove brackets and spaces, then split by commas
+    message.replace("[", "");
+    message.replace("]", "");
+    message.trim(); 
+
+    int commaCount = 0;
+    int startIndex = 0;
+    for (int i = 0; i < message.length(); i++) {
+        if (message[i] == 'l') {
+            run = false;
+            kill_switch = true;
+            // remove the character 'l' from the message
+            Serial.println("l");
+            message.remove(i, 1);
+            
+        }
+        if (message[i] == ',') {
+            if (commaCount < 3) {
+                pos[commaCount] = message.substring(startIndex, i).toFloat();
+            } else {
+                orientation[commaCount - 3] = message.substring(startIndex, i).toFloat();
+            }
+            commaCount++;
+            startIndex = i + 1;
+        }
     }
-  }
-
-  // Update run variable based on client connection status
-  run = anyClientConnected;
-  //run = true;
-
-  // Handle client messages
-  for (int i = 0; i < maxClients; i++) {
-    if (clients[i] && clients[i].connected() && clients[i].available()) {
-      String message = clients[i].readStringUntil('\n');
-      //Serial.print("Client ");
-      //Serial.print(i);
-      //Serial.print(" sent: ");
-      //Serial.println(message);
-      char c = message[0];
-      if (sizeof(c)  == 1){
-          processCommand(c); // Process the received command
-      }
-    }
-  }
-  //int pos[3]={x,y,emils_z};
-  
-  double roll = 0;
-  double pitch = 0;
-  double yaw = 0;
-  imu.getEulerRad(&roll, &pitch, &yaw);
-
-  float m1, m2, m3;
-  float a1, a2, a3;
-  float g1, g2, g3;
-  imu.getMagnetom(&m1, &m2, &m3);
-  imu.getAcc(&a1, &a2, &a3);
-  imu.getGyro(&g1, &g2, &g3);
-  
-
-
-
-  //send the mag data to all clients
-  for (int i = 0; i < maxClients; i++) {
-  if (clients[i] && clients[i].connected()) {
-    clients[i].print("battery: ");
-    clients[i].print(voltage);
-    clients[i].print("V ");
-    clients[i].print(", roll: ");
-    clients[i].println(roll);
-    clients[i].print(", pitch: ");
-    clients[i].println(pitch);
-    clients[i].print(", yaw: ");
-    clients[i].println(yaw);
-    clients[i].print(", motor1: ");
-    clients[i].print(motorValues.omega_1);
-    clients[i].print(", motor2: ");
-    clients[i].print(motorValues.omega_2);
-    clients[i].print(", motor3: ");
-    clients[i].println(motorValues.omega_3);
-
-
-    
-
-
-    /* clients[i].print(", a2: ");
-    clients[i].print(a2);
-    clients[i].print(", a3: ");
-    clients[i].print(a3);
-    clients[i].print(", g1: ");
-    clients[i].print(g1);
-    clients[i].print(", g2: ");
-    clients[i].print(g2);
-    clients[i].print(", g3: ");
-    clients[i].println(g3); */
-
-  }
-}
-  
-
-  /* clients[0].print("x: "); clients[0].print(voltage); clients[0].print(" y: "); clients[0].print(yaw-yawOffset*180/M_PI); clients[0].print("p: "); clients[0].println(pitch*180/M_PI);
-  clients[1].print("x: "); clients[1].print(voltage); clients[1].print(" y: "); clients[1].print(yaw-yawOffset*180/M_PI); clients[1].print("p: "); clients[1].println(pitch*180/M_PI);
-  clients[2].print("x: "); clients[2].print(voltage); clients[2].print(" y: "); clients[2].print(yaw-yawOffset*180/M_PI); clients[2].print("p: "); clients[2].println(pitch*180/M_PI);
-  clients[3].print("x: "); clients[3].print(voltage); clients[3].print(" y: "); clients[3].print(yaw-yawOffset*180/M_PI); clients[3].print("p: "); clients[3].println(pitch*180/M_PI);
-  clients[4].print("x: "); clients[4].print(voltage); clients[4].print(" y: "); clients[4].print(yaw-yawOffset*180/M_PI); clients[4].print("p: "); clients[4].println(pitch*180/M_PI);
-   */
-  //Serial.print(x);
-  
-  
+    orientation[3] = message.substring(startIndex).toFloat(); // Last value (q4)
 }
 
+void com() {
+    // Check for new client connections (same as before)
+    for (int i = 0; i < maxClients; i++) {
+        if (!clients[i] || !clients[i].connected()) {
+            clients[i] = server.available();
+            if (clients[i]) {
+                Serial.println("New client connected");
+            }
+        }
+    }
+    //if any clients is connected, set run to true
+    run = false;
+    for (int i = 0; i < maxClients; i++) {
+        if (clients[i] && clients[i].connected()) {
+            run = true;
+        }
+    }
+    // Handle client messages (modified)
+    for (int i = 0; i < maxClients; i++) {
+        if (clients[i] && clients[i].connected() && clients[i].available()) {
+            String message = clients[i].readStringUntil('\n'); 
+            //Serial.println(message);
+            // Parse the message directly
+            parseMessage(message, pos, orientation);
+            Serial.print("Position: ");
+            Serial.print(pos[0]);
+            Serial.print(", ");
+            Serial.print(pos[1]);
+            Serial.print(", ");
+            Serial.println(pos[2]);
+            Serial.print("Orientation: ");
+            Serial.print(orientation[0]);
+            Serial.print(", ");
+            Serial.print(orientation[1]);
+            Serial.print(", ");
+            Serial.print(orientation[2]);
+            Serial.print(", ");
+            Serial.println(orientation[3]);
 
+        }
+    }
+}
 //float realVoltage;
 
 double getBatteryVoltage(){
@@ -290,7 +280,7 @@ void comTask(void *pvParameters) {
     // Your communication task code here
     // This will run indefinitely
     com();
-    vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100 milliseconds
+    vTaskDelay(pdMS_TO_TICKS(50)); // Delay for 100 milliseconds
   }
   vTaskDelete(NULL);
 }
@@ -325,7 +315,7 @@ void controlTask(void *pvParameters) {
       //make a target quaternion from 0 roll 0 pitch and the current yaw
       target_q = Eigen::AngleAxisd(0, Eigen::Vector3d::UnitX())  // Roll
                     * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitY())  // Pitch
-                    * Eigen::AngleAxisd(yawOffset, Eigen::Vector3d::UnitZ());
+                    * Eigen::AngleAxisd(0, Eigen::Vector3d::UnitZ());
       //imu.getQuaternians(&target_q.w(), &target_q.x(), &target_q.y(), &target_q.z());
 
       for (double powerUp = 0; powerUp < 1; powerUp += 0.005){ {
@@ -368,12 +358,62 @@ void controlTask(void *pvParameters) {
   }
 }
 
+void emilTask(void *pvParameters) {
+  bool start = 0;
+
+  while (1) {
+    while (run and !kill_switch) {
+      if (start == 0){
+        for(pwm_offset = 50.0; pwm_offset < 56.0; pwm_offset += 0.005){
+          if (run and !kill_switch and !softStop){
+            emil.control(pos,pwm_offset);
+            emilUpdateMotor(motorValues);
+            vTaskDelay(pdMS_TO_TICKS(5)); // Delay for 5 milliseconds
+          }
+          else{
+            break;
+          }
+        }
+        start = 1;
+      }
+      /* if (softStop){
+        for(pwm_offset;pwm_offset > 0; pwm_offset -= 0.01){
+          if (run and !kill_switch){
+            emil.control(pwm_offset);
+            emilUpdateMotor(motorValues);
+            vTaskDelay(pdMS_TO_TICKS(5)); // Delay for 5 milliseconds
+          }
+          else{
+            break;
+          }
+      } 
+      } */
+      emil.control(pos,pwm_offset);
+      emilUpdateMotor(motorValues);
+      vTaskDelay(pdMS_TO_TICKS(5)); // Delay for 5 milliseconds
+    
+    
+    
+    }    
+    imu.update_IMU();
+    motorValues.omega_1 = 0.0;
+    motorValues.omega_2 = 0.0;
+    motorValues.omega_3 = 0.0;
+    motorValues.alpha_1 = 90.0;
+    motorValues.alpha_2 = 90.0;
+    motorValues.alpha_3 = 90.0;
+    emilUpdateMotor(motorValues);
+    vTaskDelay(pdMS_TO_TICKS(5)); // Delay for 5 milliseconds
+    start = 0;
+  }
+  vTaskDelete(NULL);
+}
 
 void batteryTask(void *pvParameters) {
   while (1) {
     if (getBatteryVoltage() < 6.7){
       //Serial.println("Battery low, shutting down");
-      kill_switch = true;
+      //kill_switch = true;
     }
     vTaskDelay(pdMS_TO_TICKS(10000)); // Delay for 10000 milliseconds aka 10 seconds
   }
@@ -476,7 +516,7 @@ void setup() {
   );
 
   xTaskCreatePinnedToCore(
-    controlTask,     // Task function
+    emilTask,     // Task function
     "Control",       // Name of task
     10000,           // Stack size of task
     NULL,            // Task input parameter

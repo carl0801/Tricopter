@@ -151,6 +151,7 @@ private:
 
     Eigen::Quaterniond q;
     Eigen::Vector3d angular_velocity;
+    Eigen::Vector3d error_vector;
     
     double x_error;
     double y_error;

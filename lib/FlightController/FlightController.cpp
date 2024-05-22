@@ -58,11 +58,11 @@ FlightController::FlightController(double dt) : dt(dt),
     imu(dt),
     TransControlX(6,0,0, dt),
     TransControlY(6,0,0, dt),
-    TransControlZ(2,0,0, dt),
-    OrientationControl(Eigen::Vector3d(0.025, 0.035, 0.05), Eigen::Vector3d(0.005, 0.005, 0.005), Eigen::Vector3d(0.025, 0.03, 0.03), dt, Eigen::Vector3d(10, 10, 10), 0.1),
+    TransControlZ(2,0,0, dt),        //0.025, 0.035, 0.05                -- 0.005, 0.005, 0.005                -- 0.025, 0.03, 0.03
+    OrientationControl(Eigen::Vector3d(0.035, 0.035, 0.05), Eigen::Vector3d(0.0005, 0.0005, 0.005), Eigen::Vector3d(0.02, 0.02, 0.03), dt, Eigen::Vector3d(10, 10, 10), 0.1),
     //OrientationControl(0.05, 0.005, 0.03, dt, 10, 0.1),
     //pquad is a 3x3 diagonal matrix with 0.1 in the first diagonal slot, 10 in the middle and 1 in the last
-    pquad((Eigen::Vector3d(0.25, 0.25, 0.25)).asDiagonal()), //0.5, 0.5, 0.2
+    pquad((Eigen::Vector3d(1.5, 1.5, 0.25)).asDiagonal()), //0.5, 0.5, 0.2
     //iden is a 3x3 identity matrix * 0.01
     pquad2((Eigen::Vector3d(5, 5, 5)).asDiagonal()), //0.3, 0.3, 1
     
@@ -111,7 +111,6 @@ motorData FlightController::calculate(double yawOffset,Eigen::Quaterniond target
     imu.getAngularVelocity(&angular_velocity[0], &angular_velocity[1], &angular_velocity[2]); //get the current angular velocity
     x = 0.0;
     y = 0.0;
-    //z /= 1000;
     z = 0.0;
 
 
@@ -131,17 +130,25 @@ motorData FlightController::calculate(double yawOffset,Eigen::Quaterniond target
 
     //calculate a error quaternion between q and target_q
     quad_error = target_q * q.inverse();
-  
 
-
+    error_vector = Eigen::Vector3d(quad_error.x(), quad_error.y(), quad_error.z());
+    //U.segment<3>(3) = pquad * error_vector * (quad_error.w() > 0 ? 1 : -1)  + pquad2 * angular_velocity;
+    U.segment<3>(3) = -pquad * error_vector * (quad_error.w() > 0 ? 1 : -1)  - pquad2 * angular_velocity;
     // Convert quaternion error to vector
-    Eigen::Vector3d error_vector = quaternionToVector(quad_error);
+    /* Eigen::Vector3d error_vector = quaternionToVector(quad_error);
+    //switch x and y
+    error_vector = Eigen::Vector3d(error_vector[0], error_vector[1], error_vector[2]);
+
     //error_vector = error_vector * (quad_error.w() > 0 ? 1 : -1);
     // Calculate the control input for the tricopter orientation using the PID controller
     Eigen::Vector3d pid_output = OrientationControl.calculate(error_vector);
 
     //U.segment<3>(3) = pquad * pid_output + pquad2 * angular_velocity;
+    
+    
     U.segment<3>(3) = pid_output;
+    U.segment<3>(3) = Eigen::Vector3d(U[3], U[4], U[5]); */
+
 
     Serial.print("U_roll: ");
     Serial.println(U[3]);

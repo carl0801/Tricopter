@@ -4,12 +4,16 @@
 // Define calibration (replace with actual calibration data if available)
 const FusionMatrix gyroscopeMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector gyroscopeSensitivity = {1.0f, 1.0f, 1.0f};
-const FusionVector gyroscopeOffset = {-0.0008878f, 0.0002957f, 0.0000198f};
+//const FusionVector gyroscopeOffset = {-0.0008878f, 0.0002957f, 0.0000198f};
+const FusionVector gyroscopeOffset = {-3.39f,2.70f,-0.10f};
 const FusionMatrix accelerometerMisalignment = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 const FusionVector accelerometerSensitivity = {1.0f, 1.0f, 1.0f};
-const FusionVector accelerometerOffset = {0.0f, 0.0f, 0.0f};
-const FusionMatrix softIronMatrix = {0.98678, -0.00660813, 0.0348315, -0.00660813, 0.967686, 0.0273002, 0.0348315, 0.0273002, 0.904855};
-const FusionVector hardIronOffset = {864.903, -275.123, -64.4907};
+//const FusionVector accelerometerOffset = {0.0f, 0.0f, 0.0f};
+const FusionVector accelerometerOffset = {0.01f,0.02f,0.04f};
+//const FusionMatrix softIronMatrix = {0.98678, -0.00660813, 0.0348315, -0.00660813, 0.967686, 0.0273002, 0.0348315, 0.0273002, 0.904855};
+const FusionMatrix softIronMatrix = {0.93,0,0,0,1.02,0,0,0,1.06};
+//const FusionVector hardIronOffset = {864.903, -275.123, -64.4907};
+const FusionVector hardIronOffset = {218.0,-270.5,-57.9};
 
 // Initialise algorithms
 FusionOffset offset;
@@ -105,13 +109,19 @@ void IMU::update_IMU() {
   accelerometer = FusionCalibrationInertial(accelerometer, accelerometerMisalignment, accelerometerSensitivity, accelerometerOffset);
   magnetometer = FusionCalibrationMagnetic(magnetometer, softIronMatrix, hardIronOffset);
 
-  FusionVector calmag = {magnetometer.axis.y, magnetometer.axis.x, -magnetometer.axis.z};
+  
 
   // Update gyroscope offset correction algorithm
   gyroscope = FusionOffsetUpdate(&offset, gyroscope);
 
+  // change axis to align to dynamics
+  gyroscope = {gyroscope.axis.x, -gyroscope.axis.y, -gyroscope.axis.z};
+  //accelerometer = {accelerometer.axis.x, -accelerometer.axis.y, -accelerometer.axis.z};
+  accelerometer = {-accelerometer.axis.x, accelerometer.axis.y, accelerometer.axis.z};
+  magnetometer = {magnetometer.axis.y, -magnetometer.axis.x, magnetometer.axis.z};
+
   // Update gyroscope AHRS algorithm
-  FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, calmag, deltat);
+  FusionAhrsUpdate(&ahrs, gyroscope, accelerometer, magnetometer, deltat);
 
   // Print algorithm outputs
   const FusionQuaternion quaternion = FusionAhrsGetQuaternion(&ahrs);
@@ -179,7 +189,7 @@ void IMU::init() {
   // TWBR = 12;  // 400 kbit/sec I2C speed
 
   MPU.MPU9250SelfTest(MPU.selfTest);
-  MPU.calibrateMPU9250(MPU.gyroBias, MPU.accelBias);
+  //MPU.calibrateMPU9250(MPU.gyroBias, MPU.accelBias);
 
   MPU.initMPU9250();
   MPU.initAK8963(MPU.factoryMagCalibration);
@@ -231,8 +241,8 @@ void IMU::init() {
 
   // Set AHRS algorithm settings
   const FusionAhrsSettings settings = {
-          .convention = FusionConventionNed,
-          .gain = 0.5f, //0.7f
+          .convention = FusionConventionNwu,
+          .gain = 0.5f, //0.5f
           .gyroscopeRange = MPU.gRes * 32768.0f, /* replace this with actual gyroscope range in degrees/s */
           .accelerationRejection = 10.0f,
           .magneticRejection = 10.0f,
